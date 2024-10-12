@@ -6,9 +6,9 @@ local gfx <const> = pd.graphics
 local smp <const> = pd.sound.sampleplayer
 local text <const> = gfx.getLocalizedText
 
-class('howtoplay').extends(gfx.sprite) -- Create the scene's class
-function howtoplay:init(...)
-	howtoplay.super.init(self)
+class('gameover').extends(gfx.sprite) -- Create the scene's class
+function gameover:init(...)
+	gameover.super.init(self)
 	local args = {...} -- Arguments passed in through the scene management will arrive here
 
 	function pd.gameWillPause() -- When the game's paused...
@@ -23,10 +23,12 @@ function howtoplay:init(...)
 	}
 
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
+		level = args[1],
+		score = args[2],
 		selection = 1,
-		selections = {'more', 'title'},
+		selections = {'game', 'title'},
 	}
-	vars.howtoplayHandlers = {
+	vars.gameoverHandlers = {
 		upButtonDown = function()
 			if vars.selection == 1 then
 				vars.selection = #vars.selections
@@ -49,20 +51,20 @@ function howtoplay:init(...)
 
 		AButtonDown = function()
 			if save.sfx then assets.bark:play() end
-			if vars.selections[vars.selection] == "more" then
-				scenemanager:switchscene(howtoplaytoo)
+			if vars.selections[vars.selection] == "game" then
+				scenemanager:switchscene(game)
 			elseif vars.selections[vars.selection] == "title" then
 				scenemanager:switchscene(title)
 			end
 		end
 	}
-	pd.inputHandlers.push(vars.howtoplayHandlers)
+	pd.inputHandlers.push(vars.gameoverHandlers)
 
 	gfx.sprite.setBackgroundDrawingCallback(function(width, height, x, y)
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
-		assets.newsleak:drawText('Okay, so let me run through this in my head one more time:\n\nI\'m Fido. I\'m a dog, and I\'m also a pretty small bag of bones.\nThe afterlife\'s pretty easy; just jump around and eat candy.\nOf course, there\'s no such thing as a free lunch, so I\'ve gotta\nwatch out for these other folks, too - they\'re REAL meanies.\nSuch as the nature of the afterlife, I\'ve just gotta keep doing\nthis over and over, forever. Maybe I can get a high score?', 10, 10)
-		assets.newsleak:drawTextAligned('...I still don\'t understand this.', 390, 190, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('Okay, I think I\'ve got it now.', 390, 210, kTextAlignment.right)
+		assets.newsleak:drawText('game over!! you got score ' .. vars.score .. ', at lv ' .. vars.level, 10, 10)
+		assets.newsleak:drawTextAligned('Let\'s play another round, why not?', 390, 190, kTextAlignment.right)
+		assets.newsleak:drawTextAligned('I think I\'ll head back to the title menu.', 390, 210, kTextAlignment.right)
 		assets.newsleak:drawText('Press Ⓐ to do this.', 10, 170 + (20 * vars.selection))
 		gfx.setColor(gfx.kColorXOR)
 		gfx.fillRect(0, 170 + (20 * vars.selection), 400, 20)

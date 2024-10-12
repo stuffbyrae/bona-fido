@@ -20,7 +20,9 @@ function title:init(...)
 
 	assets = { -- All assets go here. Images, sounds, fonts, etc.
 		title = gfx.image.new('images/title'),
-		newsleak = gfx.font.new('fonts/newsleak')
+		newsleak = gfx.font.new('fonts/newsleak'),
+		tick = smp.new('audio/sfx/tick'),
+		bark = smp.new('audio/sfx/bark'),
 	}
 
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
@@ -34,6 +36,7 @@ function title:init(...)
 			else
 				vars.selection -= 1
 			end
+			if save.sfx then assets.tick:play() end
 			gfx.sprite.redrawBackground()
 		end,
 
@@ -43,10 +46,12 @@ function title:init(...)
 			else
 				vars.selection += 1
 			end
+			if save.sfx then assets.tick:play() end
 			gfx.sprite.redrawBackground()
 		end,
 
 		AButtonDown = function()
+			if save.sfx then assets.bark:play() end
 			if vars.selections[vars.selection] == 'game' then
 				scenemanager:switchscene(game)
 			elseif vars.selections[vars.selection] == 'howtoplay' then
@@ -61,8 +66,8 @@ function title:init(...)
 	gfx.sprite.setBackgroundDrawingCallback(function(width, height, x, y)
 		assets.title:draw(0, 0)
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
-		assets.newsleak:drawTextAligned('made by rae', 390, 10, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('for playjam 5', 390, 30, kTextAlignment.right)
+		assets.newsleak:drawTextAligned(pd.metadata.version .. ' - ' .. 'made by rae', 390, 10, kTextAlignment.right)
+		assets.newsleak:drawTextAligned('for playjam 6', 390, 30, kTextAlignment.right)
 		assets.newsleak:drawTextAligned('Let\'s play a round!', 390, 170, kTextAlignment.right)
 		assets.newsleak:drawTextAligned('Wait... how do I play?', 390, 190, kTextAlignment.right)
 		assets.newsleak:drawTextAligned('Let\'s change some options.', 390, 210, kTextAlignment.right)

@@ -69,6 +69,22 @@ function newmusic(file, loop, range)
     end
 end
 
+-- From https://devforum.roblox.com/t/lua-map-command/215342
+--// maps a given range from a specific iterator to a new range
+function map(n, start, stop, newStart, newStop, withinBounds)
+    local value = ((n - start) / (stop - start)) * (newStop - newStart) + newStart
+    --// Returns basic value
+    if not withinBounds then
+        return value
+    end
+    --// Returns values constrained to exact range
+    if newStart < newStop then
+        return math.max(math.min(value, newStop), newStart)
+    else
+        return math.max(math.min(value, newStart), newStop)
+    end
+end
+
 function pd.timer:resetnew(duration, startValue, endValue, easingFunction)
     self.duration = duration
     if startValue ~= nil then

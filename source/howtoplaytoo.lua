@@ -15,17 +15,19 @@ function howtoplaytoo:init(...)
 	end
 
 	assets = { -- All assets go here. Images, sounds, fonts, etc.
-		newsleak = gfx.font.new('fonts/newsleak')
+		newsleak = gfx.font.new('fonts/newsleak'),
+		bark = smp.new('audio/sfx/bark'),
 	}
 
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
 	}
-	vars.titleHandlers = {
+	vars.howtoplaytooHandlers = {
 		AButtonDown = function()
+			if save.sfx then assets.bark:play() end
 			scenemanager:switchscene(title)
 		end
 	}
-	pd.inputHandlers.push(vars.titleHandlers)
+	pd.inputHandlers.push(vars.howtoplaytooHandlers)
 
 	gfx.sprite.setBackgroundDrawingCallback(function(width, height, x, y)
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
