@@ -6,7 +6,6 @@ import 'CoreLibs/sprites'
 import 'CoreLibs/graphics'
 import 'CoreLibs/animation'
 import 'scenemanager'
-import 'title'
 scenemanager = scenemanager()
 
 -- Setting up basic SDK params
@@ -90,7 +89,8 @@ function pd.timer:resetnew(duration, startValue, endValue, easingFunction)
     self.timerEndedCallback = self.timerEndedCallback
 end
 
-scenemanager:switchscene(title)
+import 'game'
+scenemanager:switchscene(game)
 
 function pd.update()
     -- Catch-all stuff ...

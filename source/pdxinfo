@@ -1,7 +1,7 @@
-name=Template
+name=Bona Fide
 author=rae
 description=
-bundleID=wtf.rae.template
+bundleID=wtf.rae.bonafide
 version=1.0.0
 buildNumber=1
 imagePath=images/system
