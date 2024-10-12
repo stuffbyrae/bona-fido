@@ -21,6 +21,10 @@ gfx.setBackgroundColor(gfx.kColorBlack)
 -- Save check
 function savecheck()
     save = pd.datastore.read()
+    if save == nil then save = {} end
+    save.score = save.score or 0
+    if save.music == nil then save.music = true end
+    if save.sfx == nil then save.sfx = true end
 end
 
 -- ... now we run that!
@@ -89,8 +93,8 @@ function pd.timer:resetnew(duration, startValue, endValue, easingFunction)
     self.timerEndedCallback = self.timerEndedCallback
 end
 
-import 'game'
-scenemanager:switchscene(game)
+import 'title'
+scenemanager:switchscene(title)
 
 function pd.update()
     -- Catch-all stuff ...

@@ -1,7 +1,7 @@
-name=Bona Fide
+name=Bona Fido
 author=rae
-description=
-bundleID=wtf.rae.bonafide
+description=Turns out the afterlife's pretty easy breezy, even if a bit repetitive.
+bundleID=wtf.rae.bonafido
 version=1.0.0
-buildNumber=1
+buildNumber=165
 imagePath=images/system
