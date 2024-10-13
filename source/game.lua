@@ -29,6 +29,10 @@ function game:init(...)
 		die = smp.new('audio/sfx/die'),
 		win = smp.new('audio/sfx/win'),
 		life = gfx.image.new('images/life'),
+		bark_img = gfx.imagetable.new('images/bark'),
+		enemy1 = gfx.imagetable.new('images/enemy1'),
+		enemy2 = gfx.imagetable.new('images/enemy2'),
+		enemy3 = gfx.imagetable.new('images/enemy3'),
 	}
 
 	function draw_block(x, y, width, height, num)
@@ -43,15 +47,13 @@ function game:init(...)
 			gfx.setDitherPattern(0.5, gfx.image.kDitherTypeDiagonalLine)
 			gfx.fillRect(x, y, width, height)
 			gfx.setColor(gfx.kColorBlack)
-			gfx.setDitherPattern(0.75, gfx.image.kDitherTypeDiagonalLine)
+			gfx.setDitherPattern(0.5, gfx.image.kDitherTypeDiagonalLine)
 			gfx.fillRect(x+2, y+2, width-4, height-4)
 		elseif num == 4 then -- Ice platform drawing
 			gfx.setColor(gfx.kColorWhite)
 			gfx.setDitherPattern(0.5, gfx.image.kDitherTypeDiagonalLine)
 			gfx.fillRect(x, y, width, height)
 			gfx.setColor(gfx.kColorWhite)
-			gfx.setDitherPattern(0.25, gfx.image.kDitherTypeDiagonalLine)
-			gfx.fillRect(x+2, y+2, width-4, height-4)
 		end
 
 	end
@@ -59,7 +61,7 @@ function game:init(...)
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
 		level = args[1] or 1,
 		score = args[2] or 0,
-		lives = 3,
+		lives = args[3] or 3,
 		show_level = true,
 		tags = {
 			fido = 1,
@@ -68,14 +70,18 @@ function game:init(...)
 			platform_ice = 4,
 			pickup = 5,
 			enemy = 6,
+			bark = 7,
 		},
+		won = false,
 		ground = gfx.sprite.addEmptyCollisionSprite(0, 210, 400, 30),
 		platform1 = gfx.sprite.addEmptyCollisionSprite(265, 155, 135, 10),
 		platform2 = gfx.sprite.addEmptyCollisionSprite(0, 155, 135, 10),
 		platform3 = gfx.sprite.addEmptyCollisionSprite(305, 90, 95, 10),
 		platform4 = gfx.sprite.addEmptyCollisionSprite(0, 90, 95, 10),
 		walk_timer = pd.timer.new(300, 1, 6.99),
-		death_timer = pd.timer.new(0, 25, 25),
+		death_timer = pd.timer.new(0, 17, 17),
+		bark_timer = pd.timer.new(200, 1, 4.99),
+		enemy_timer = pd.timer.new(700, 1, 2.99),
 		counter = 0,
 		enemies = {},
 	}
@@ -117,6 +123,8 @@ function game:init(...)
 	pd.inputHandlers.push(vars.gameHandlers)
 
 	vars.walk_timer.repeats = true
+	vars.bark_timer.repeats = true
+	vars.enemy_timer.repeats = true
 	vars.death_timer.discardOnCompletion = false
 
 	-- TODO: put platform terrain "generation" here
@@ -205,6 +213,8 @@ function game:init(...)
 		self:setTag(vars.tags.fido)
 		self.control = false
 		self.invincible = true
+		self.barking = false
+		self.landing = false
 		self.left = false
 		self.right = false
 		self.deathspeed = 0
@@ -270,33 +280,41 @@ function game:init(...)
 	end
 
 		if length ~= nil and length > 0 then -- If there are any collisions...
-			local tag = collisions[1].other:getTag() -- Store the tag.
-			local collx, colly = collisions[1].normal:unpack() -- Collision normal to determine hit directions
-			if tag == 2 or tag == 3 or tag == 4 then -- 2, 3, and 4 indicate the three platform types.
-				-- Horizontal movement speeds
-				self.movemax = 5 -- The max speed
-				self.speedup = 0.75 -- The rate at which the player speeds up (per frame)
-				self.slowdown = 1 -- The rate at which the player comes to a stop.
-				if tag == 3 then -- For muddy platforms,
-					self.movemax /= 2 -- make the player slower.
-				elseif tag == 4 then -- For icy platforms,
-					self.slowdown /= 3 -- make the player more slippery.
-				end
+			for i = 1, #collisions do
+				local tag = collisions[i].other:getTag() -- Store the tag.
+				local collx, colly = collisions[i].normal:unpack() -- Collision normal to determine hit directions
+				if tag == 2 or tag == 3 or tag == 4 then -- 2, 3, and 4 indicate the three platform types.
+					-- Horizontal movement speeds
+					self.movemax = 5 -- The max speed
+					self.speedup = 0.75 -- The rate at which the player speeds up (per frame)
+					self.slowdown = 1 -- The rate at which the player comes to a stop.
+					if tag == 3 then -- For muddy platforms,
+						self.movemax /= 2 -- make the player slower.
+					elseif tag == 4 then -- For icy platforms,
+						self.slowdown /= 3 -- make the player more slippery.
+					end
 
-				if colly ~= 0 then -- If the player is hitting their head or feet...
-					if colly == 1 and save.sfx then -- If they're hitting their head,
-						assets.bonk:play(1, 1 + (0.01 * math.random(-10, 10))) -- BONK!
+					if colly ~= 0 then -- If the player is hitting their head or feet...
+						if colly == 1 and save.sfx then -- If they're hitting their head,
+							assets.bonk:play(1, 1 + (0.01 * math.random(-10, 10))) -- BONK!
+						end
+						if colly == -1 then -- If they're landing on their feet,
+							if self.jumping then self.jumping = false end -- end any jumps.
+							if self.velocity > 10 then
+								if save.sfx then assets.ground:play(1, 1 + (0.01 * math.random(-10, 10))) end
+								self.landing = true
+								pd.timer.performAfterDelay(50, function()
+									self.landing = false
+								end)
+							end
+						end
+						self.velocity = 0 -- Reset the player velocity,
+						self:setImage(assets.fido[1]) -- reset their player sprite,
+						if save.sfx then assets.jump:stop() end -- and stop any jumping noise.
 					end
-					if colly == -1 then -- If they're landing on their feet,
-						if self.jumping then self.jumping = false end -- end any jumps.
-						if save.sfx and self.velocity > 10 then assets.ground:play(1, 1 + (0.01 * math.random(-10, 10))) end -- If you're falling far enough, play a whump sound.
-					end
-					self.velocity = 0 -- Reset the player velocity,
-					self:setImage(assets.fido[1]) -- reset their player sprite,
-					if save.sfx then assets.jump:stop() end -- and stop any jumping noise.
+				elseif tag == 6 and not collisions[i].other.dead and not self.invincible then
+					self:die(collx)
 				end
-			elseif tag == 6 and not collisions[1].other.dead and not self.invincible then
-				self:die(collx)
 			end
 		end
 
@@ -350,7 +368,7 @@ function game:init(...)
 			if vars.death_timer.timeLeft ~= 0 then
 				self:setImage(assets.fido[math.floor(vars.death_timer.value)])
 			else
-				self:setImage(assets.fido[25])
+				self:setImage(assets.fido[17])
 			end
 		end
 
@@ -358,22 +376,29 @@ function game:init(...)
 		if x < 0 then self:moveTo(400, y) end
 		if x > 400 then self:moveTo(0, y) end
 
-		if pd.getReduceFlashing() then
-			if math.floor(vars.counter / 4) % 2 == 0 and self.invincible then self:setImage(assets.fido[25]) end
-		else
-			if vars.counter % 2 == 0 and self.invincible then self:setImage(assets.fido[25]) end
-		end
+		if pd.buttonIsPressed('up') and self.control then self:setImage(assets.fido[20]) end
+		if pd.buttonIsPressed('down') and self.control then self:setImage(assets.fido[21]) end
+		if self.barking then self:setImage(assets.fido[18]) end
+		if self.landing then self:setImage(assets.fido[10]) end
 
 		-- Sprite flipping code
 		if self.direction == "left" then self:setImageFlip('unflipped') end
 		if self.direction == "right" then self:setImageFlip('flipX') end
+
+		if pd.getReduceFlashing() then
+			if math.floor(vars.counter / 4) % 2 == 0 and self.invincible then self:setImage(assets.fido[17]) end
+		else
+			if vars.counter % 2 == 0 and self.invincible then self:setImage(assets.fido[17]) end
+		end
 
 		-- SFX stereo panning
 		assets.run:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
 		assets.jump:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
 		assets.skid:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
 		assets.bonk:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
+		assets.bark:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
 		assets.ground:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
+		assets.die:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
 	end
 	function game_fido:jump()
 		if not self.jumping and self.velocity == 0 and self.control then
@@ -384,8 +409,14 @@ function game:init(...)
 		end
 	end
 	function game_fido:bark()
-		if self.control then
+		if self.control and not self.barking then
 			if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			self.barking = true
+			sprites.bark:add()
+			pd.timer.performAfterDelay(50, function()
+				self.barking = false
+				sprites.bark:remove()
+			end)
 		end
 	end
 	function game_fido:die(normal)
@@ -398,16 +429,17 @@ function game:init(...)
 			self.jumping = false
 			local horideathspeed
 			self.deathspeed = normal * 2
-			vars.death_timer:resetnew(1001, 12, 25)
+			vars.death_timer:resetnew(500, 12, 17.99)
 			if save.sfx then assets.die:play() end
 			vars.lives -= 1
 			if vars.lives <= 0 then
 				fademusic(700)
 			end
+			gfx.sprite.redrawBackground()
 			pd.timer.performAfterDelay(2000, function()
 				if vars.lives <= 0 then
 					scenemanager:switchscene(gameover, vars.level, vars.score)
-				else
+				elseif not vars.won then
 					if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 					self.invincible = true
 					pd.timer.performAfterDelay(2000, function()
@@ -420,15 +452,36 @@ function game:init(...)
 		end
 	end
 	function game_fido:collisionResponse(other)
-		if other:getTag() == 6 then
+		if other:getTag() == 6 or other:getTag() == 7 then
 			return gfx.sprite.kCollisionTypeOverlap
 		else
 			return gfx.sprite.kCollisionTypeSlide
 		end
 	end
 
+	class('game_bark').extends(gfx.sprite)
+	function game_bark:init()
+		game_bark.super.init(self)
+		self:setSize(60, 40)
+		self:setCollideRect(0, 0, 60, 40)
+		self:setTag(vars.tags.bark)
+	end
+	function game_bark:update()
+		if sprites.fido.direction == "left" then
+			self:moveTo((sprites.fido.x - 20) % 400, sprites.fido.y - 15)
+		elseif sprites.fido.direction == "right" then
+			self:moveTo((sprites.fido.x + 20) % 400, sprites.fido.y - 15)
+		end
+
+		self:setImage(assets.bark_img[math.floor(vars.bark_timer.value)])
+
+		-- Sprite flipping code
+		if sprites.fido.direction == "left" then self:setImageFlip('unflipped') end
+		if sprites.fido.direction == "right" then self:setImageFlip('flipX') end
+	end
+
 	class('game_enemy').extends(gfx.sprite)
-	function game_enemy:init(type, x, y)
+	function game_enemy:init(type, x, y, direction)
 		game_enemy.super.init(self)
 		self:setImage(gfx.image.new(32, 32, gfx.kColorWhite))
 		self:setCenter(0.5, 1)
@@ -438,9 +491,14 @@ function game:init(...)
 		self.dead = false
 		self.queuedfordeletion = false
 		self.type = type -- 1, 2, or 3.
-		self.direction = "right"
+		self.direction = direction
 		self.left = false
-		self.right = true
+		self.right = false
+		if self.direction == "left" then
+			self.left = true
+		elseif self.direction == "right" then
+			self.right = true
+		end
 		self.jumping = false
 		self.horispeed = 0
 		self.velocity = 0
@@ -483,30 +541,34 @@ function game:init(...)
 			actualx, actualy, collisions, length = self:moveWithCollisions(x + self.horispeed, y + self.velocity)
 
 			if length > 0 then
-				local tag = collisions[1].other:getTag() -- Store the tag.
-				local collx, colly = collisions[1].normal:unpack() -- Collision normal to determine hit directions
-				if tag == 2 or tag == 3 or tag == 4 then -- 2, 3, and 4 indicate the three platform types.
-					-- Horizontal movement speeds
-					if self.type == 1 then
-						self.movemax = 2
-					elseif self.type == 2 then
-						self.movemax = 1.75
-					elseif self.type == 3 then
-						self.movemax = 3
-					end
-					self.speedup = 0.75 -- The rate at which the player speeds up (per frame)
-					self.slowdown = 1 -- The rate at which the player comes to a stop.
-					if tag == 3 then -- For muddy platforms,
-						self.movemax /= 2 -- make the player slower.
-					elseif tag == 4 then -- For icy platforms,
-						self.slowdown /= 3 -- make the player more slippery.
-					end
-
-					if colly ~= 0 then -- If the player is hitting their head or feet...
-						if colly == -1 then -- If they're landing on their feet,
-							if self.jumping then self.jumping = false end -- end any jumps.
+				for i = 1, #collisions do
+					local tag = collisions[i].other:getTag() -- Store the tag.
+					local collx, colly = collisions[i].normal:unpack() -- Collision normal to determine hit directions
+					if tag == 2 or tag == 3 or tag == 4 then -- 2, 3, and 4 indicate the three platform types.
+						-- Horizontal movement speeds
+						if self.type == 1 then
+							self.movemax = 2
+						elseif self.type == 2 then
+							self.movemax = 1.75
+						elseif self.type == 3 then
+							self.movemax = 3
 						end
-						self.velocity = 0 -- Reset the player velocity,
+						self.speedup = 0.75 -- The rate at which the player speeds up (per frame)
+						self.slowdown = 1 -- The rate at which the player comes to a stop.
+						if tag == 3 then -- For muddy platforms,
+							self.movemax /= 2 -- make the player slower.
+						elseif tag == 4 then -- For icy platforms,
+							self.slowdown /= 3 -- make the player more slippery.
+						end
+
+						if colly ~= 0 then -- If the player is hitting their head or feet...
+							if colly == -1 then -- If they're landing on their feet,
+								if self.jumping then self.jumping = false end -- end any jumps.
+							end
+							self.velocity = 0 -- Reset the player velocity,
+						end
+					elseif tag == 7 and sprites.fido.barking then
+						self:die(collx)
 					end
 				end
 			end
@@ -608,13 +670,27 @@ function game:init(...)
 				end
 			end
 
+			self:setImage(assets['enemy' .. self.type][math.floor(vars.enemy_timer.value)])
+
 			-- Screen wrapping code
 			if x < 0 then self:moveTo(400, y) end
 			if x > 400 then self:moveTo(0, y) end
 
 			-- Sprite flipping code
-			if self.direction == "left" then self:setImageFlip('unflipped') end
-			if self.direction == "right" then self:setImageFlip('flipX') end
+			if self.direction == "left" then
+				if self.dead then
+					self:setImageFlip('flipY')
+				else
+					self:setImageFlip('unflipped')
+				end
+			end
+			if self.direction == "right" then
+				if self.dead then
+					self:setImageFlip('flipXY')
+				else
+					self:setImageFlip('flipX')
+				end
+			end
 		else -- Oh, the CPU's dead.
 			self.velocity += 2 -- Make him a bit floatier.
 			self:moveBy(self.deathspeed, self.velocity)
@@ -641,23 +717,29 @@ function game:init(...)
 		end
 	end
 	function game_enemy:die(normal)
-		normal = normal or 0
-		self.dead = true
-		self.velocity = -10
-		self.deathspeed = normal * 2
-		if self.type == 1 then
-			vars.score += 100
-		elseif self.type == 2 then
-			vars.score += 300
-		elseif self.type == 3 then
-			vars.score += 500
+		if not self.dead then
+			if save.sfx then assets.die:play() end
+			normal = normal or 0
+			self.dead = true
+			self.deathspeed = normal * 2
+			pd.timer.performAfterDelay(1, function()
+				self.velocity = -10
+			end)
+			if self.type == 1 then
+				vars.score += 100
+			elseif self.type == 2 then
+				vars.score += 300
+			elseif self.type == 3 then
+				vars.score += 500
+			end
+			gfx.sprite.redrawBackground()
 		end
 	end
 	function game_enemy:collisionResponse(other)
 		if self.dead then
 			return gfx.sprite.kCollisionTypeOverlap
 		end
-		if other:getTag() == 1 or other:getTag() == 6 then
+		if other:getTag() == 1 or other:getTag() == 6 or other:getTag() == 7 then
 			return gfx.sprite.kCollisionTypeOverlap
 		else
 			return gfx.sprite.kCollisionTypeSlide
@@ -666,13 +748,19 @@ function game:init(...)
 
 	-- Set the sprites
 	sprites.fido = game_fido()
+	sprites.bark = game_bark()
 	self:add()
 
 	pd.timer.performAfterDelay(2500, function()
-		self:new_enemy()
-		self:new_enemy()
+		pd.timer.performAfterDelay(500, function()
+			self:new_enemy()
+		end)
+		pd.timer.performAfterDelay(2000, function()
+			self:new_enemy()
+		end)
 		vars.show_level = false
 		sprites.fido.control = true
+		gfx.sprite.redrawBackground()
 		newmusic('audio/music/coolblast', true)
 		pd.timer.performAfterDelay(2000, function()
 			sprites.fido.invincible = false
@@ -682,39 +770,40 @@ end
 
 function game:new_enemy()
 	if #vars.enemies == 0 then
-		if sprites.enemy1.queuedfordeletion and sprites.enemy2.queuedfordeletion then
+		if sprites.enemy1.queuedfordeletion and sprites.enemy2.queuedfordeletion and not vars.won and vars.lives > 0 then
 			self:win()
 		end
 		return
 	else
 		local random = math.random(1, #vars.enemies)
 		if sprites.enemy1 == nil then
-			sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32)
+			sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32, "right")
 		elseif sprites.enemy1.queuedfordeletion then
 			sprites.enemy1:remove()
 			sprites.enemy1 = nil
-			sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32)
+			sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32, "right")
 		elseif sprites.enemy2 == nil then
-			sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32)
+			sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32, "left")
 		elseif sprites.enemy2.queuedfordeletion then
 			sprites.enemy2:remove()
 			sprites.enemy2 = nil
-			sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32)
+			sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32, "left")
 		end
 		table.remove(vars.enemies, random)
 	end
 end
 
 function game:win()
+	vars.won = true
 	sprites.fido.control = false
 	stopmusic()
+	gfx.sprite.redrawBackground()
 	if save.sfx then assets.win:play() end
 	pd.timer.performAfterDelay(2500, function()
-		scenemanager:switchscene(game, vars.level + 1, vars.score)
+		scenemanager:switchscene(game, vars.level + 1, vars.score, vars.lives)
 	end)
 end
 
 function game:update()
 	vars.counter += 1
-	gfx.sprite.redrawBackground()
 end
