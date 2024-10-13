@@ -726,11 +726,11 @@ function game:init(...)
 				self.velocity = -10
 			end)
 			if self.type == 1 then
-				vars.score += 100
+				game:changescore(100)
 			elseif self.type == 2 then
-				vars.score += 300
+				game:changescore(300)
 			elseif self.type == 3 then
-				vars.score += 500
+				game:changescore(500)
 			end
 			gfx.sprite.redrawBackground()
 		end
@@ -802,6 +802,21 @@ function game:win()
 	pd.timer.performAfterDelay(2500, function()
 		scenemanager:switchscene(game, vars.level + 1, vars.score, vars.lives)
 	end)
+end
+
+function game:changescore(new)
+	local oldscore = vars.score
+	vars.score += newR
+	if vars.score < 0 then vars.score = 0 end
+	if vars.score > oldscore then
+		for i = 1, 100 do
+			if oldscore < (i * 10000) and vars.score >= (i * 10000) then
+				vars.lives += 1
+				if save.sfx then assets.win:play() end
+				gfx.sprite.redrawBackground()
+			end
+		end
+	end
 end
 
 function game:update()

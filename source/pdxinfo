@@ -3,6 +3,6 @@ author=rae
 description=Turns out the afterlife's pretty easy breezy, even if a bit repetitive.
 bundleID=wtf.rae.bonafido
 version=1.0.0
-buildNumber=704
+buildNumber=711
 imagePath=images/system
 launchSoundPath=audio/sfx/bark
