@@ -18,6 +18,7 @@ function options:init(...)
 		newsleak = gfx.font.new('fonts/newsleak'),
 		tick = smp.new('audio/sfx/tick'),
 		bark = smp.new('audio/sfx/bark'),
+		die = smp.new('audio/sfx/die'),
 	}
 
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
@@ -32,7 +33,7 @@ function options:init(...)
 			else
 				vars.selection -= 1
 			end
-			if save.sfx then assets.tick:play() end
+			if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			gfx.sprite.redrawBackground()
 		end,
 
@@ -42,25 +43,33 @@ function options:init(...)
 			else
 				vars.selection += 1
 			end
-			if save.sfx then assets.tick:play() end
+			if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			gfx.sprite.redrawBackground()
 		end,
 
 		AButtonDown = function()
 			if vars.selections[vars.selection] == 'music' then
 				save.music = not save.music
-				if save.sfx then assets.bark:play() end
+				if save.music then
+					newmusic('audio/music/basementfloor', true)
+				else
+					stopmusic()
+				end
+				if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			elseif vars.selections[vars.selection] == 'sfx' then
 				save.sfx = not save.sfx
-				if save.sfx then assets.bark:play() end
+				if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			elseif vars.selections[vars.selection] == 'reset' and vars.reset < 4 then
 				if save.sfx then assets.bark:play(1, 0.85 + (0.15 * vars.reset)) end
 				vars.reset += 1
 				if vars.reset == 4 then
 					save.score = 0
+					if save.sfx then assets.die:play(1, 1 + (0.01 * math.random(-10, 10))) end
+					shakies()
+					shakies_y()
 				end
 			elseif vars.selections[vars.selection] == 'back' then
-				if save.sfx then assets.bark:play() end
+				if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 				scenemanager:switchscene(title)
 			end
 			gfx.sprite.redrawBackground()
@@ -72,17 +81,17 @@ function options:init(...)
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
 		assets.newsleak:drawText('This game was made by Rae; she did art and programming.', 10, 10)
 		if save.music then
-			assets.newsleak:drawText('Somebody did the music, which you\'re hearing now.', 10, 30)
+			assets.newsleak:drawText('Kevin MacLeod did the music, which you\'re hearing now.', 10, 30)
 		else
-			assets.newsleak:drawText('Somebody did the music, which you\'re not hearing now.', 10, 30)
+			assets.newsleak:drawText('Kevin MacLeod did the music, which you\'re not hearing.', 10, 30)
 		end
 		if save.sfx then
 			assets.newsleak:drawText('Pixabay handled the SFX, which you\'re hearing now.', 10, 50)
 		else
-			assets.newsleak:drawText('Pixabay handled the SFX, which you\'re not hearing now.', 10, 50)
+			assets.newsleak:drawText('Pixabay handled the SFX, which you\'re not hearing.', 10, 50)
 		end
 		assets.newsleak:drawText('Panic provided the nice Newsleak Serif font in the SDK.', 10, 70)
-		assets.newsleak:drawText('Mag, Toad, Kirk, Henry n\' John were big helps, too.', 10, 90)
+		assets.newsleak:drawText('Mag, Toad, Kirk, Henry, John n\' bumble were big helps, too.', 10, 90)
 		assets.newsleak:drawText('Sorry, my mind\'s wandering... Oh, here are the options:', 10, 120)
 		if save.music then
 			assets.newsleak:drawTextAligned('The music\'s currently on.', 390, 150, kTextAlignment.right)

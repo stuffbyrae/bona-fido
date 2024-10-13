@@ -1,5 +1,3 @@
-import 'howtoplaytoo'
-
 -- Setting up consts
 local pd <const> = playdate
 local gfx <const> = pd.graphics
@@ -24,6 +22,7 @@ function howtoplay:init(...)
 
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
 		selection = 1,
+		page = 1,
 		selections = {'more', 'title'},
 	}
 	vars.howtoplayHandlers = {
@@ -33,7 +32,7 @@ function howtoplay:init(...)
 			else
 				vars.selection -= 1
 			end
-			if save.sfx then assets.tick:play() end
+			if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			gfx.sprite.redrawBackground()
 		end,
 
@@ -43,14 +42,19 @@ function howtoplay:init(...)
 			else
 				vars.selection += 1
 			end
-			if save.sfx then assets.tick:play() end
+			if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			gfx.sprite.redrawBackground()
 		end,
 
 		AButtonDown = function()
-			if save.sfx then assets.bark:play() end
+			if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			if vars.selections[vars.selection] == "more" then
-				scenemanager:switchscene(howtoplaytoo)
+				if vars.page < 4 then
+					vars.page += 1
+				elseif vars.page == 4 then
+					vars.page = 1
+				end
+				gfx.sprite.redrawBackground()
 			elseif vars.selections[vars.selection] == "title" then
 				scenemanager:switchscene(title)
 			end
@@ -60,8 +64,16 @@ function howtoplay:init(...)
 
 	gfx.sprite.setBackgroundDrawingCallback(function(width, height, x, y)
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
-		assets.newsleak:drawText('Okay, so let me run through this in my head one more time:\n\nI\'m Fido. I\'m a dog, and I\'m also a pretty small bag of bones.\nThe afterlife\'s pretty easy; just jump around and eat candy.\nOf course, there\'s no such thing as a free lunch, so I\'ve gotta\nwatch out for these other folks, too - they\'re REAL meanies.\nSuch as the nature of the afterlife, I\'ve just gotta keep doing\nthis over and over, forever. Maybe I can get a high score?', 10, 10)
-		assets.newsleak:drawTextAligned('...I still don\'t understand this.', 390, 190, kTextAlignment.right)
+		if vars.page == 1 then -- Backstory
+			assets.newsleak:drawText('Okay, let me run through this in my head one more time:\n\nI\'m Fido. I\'m a dog, and I\'m also a pretty small bag of bones.\nThe afterlife\'s pretty easy; just jump around and eat candy.\nOf course, there\'s no such thing as a free lunch, so I\'ve gotta\nwatch out for these other folks, too - they\'re REAL meanies.\nSuch as the nature of the afterlife, I\'ve just gotta keep doing\nthis over and over, forever. Maybe I can get a high score?', 10, 10)
+			assets.newsleak:drawTextAligned('...I still don\'t understand.', 390, 190, kTextAlignment.right)
+		elseif vars.page == 2 then -- Basic controls
+			assets.newsleak:drawTextAligned('Abstract! What about those enemies?', 390, 190, kTextAlignment.right)
+		elseif vars.page == 3 then -- Enemy types
+			assets.newsleak:drawTextAligned('And the stuff in the ground sometimes?', 390, 190, kTextAlignment.right)
+		elseif vars.page == 4 then -- Dig-ups types
+			assets.newsleak:drawTextAligned('Wait...I lost my train of thought.', 390, 190, kTextAlignment.right)
+		end
 		assets.newsleak:drawTextAligned('Okay, I think I\'ve got it now.', 390, 210, kTextAlignment.right)
 		assets.newsleak:drawText('Press Ⓐ to do this.', 10, 170 + (20 * vars.selection))
 		gfx.setColor(gfx.kColorXOR)

@@ -36,7 +36,7 @@ function title:init(...)
 			else
 				vars.selection -= 1
 			end
-			if save.sfx then assets.tick:play() end
+			if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			gfx.sprite.redrawBackground()
 		end,
 
@@ -46,13 +46,14 @@ function title:init(...)
 			else
 				vars.selection += 1
 			end
-			if save.sfx then assets.tick:play() end
+			if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			gfx.sprite.redrawBackground()
 		end,
 
 		AButtonDown = function()
-			if save.sfx then assets.bark:play() end
+			if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			if vars.selections[vars.selection] == 'game' then
+				stopmusic()
 				scenemanager:switchscene(game)
 			elseif vars.selections[vars.selection] == 'howtoplay' then
 				scenemanager:switchscene(howtoplay)
@@ -69,7 +70,7 @@ function title:init(...)
 		assets.newsleak:drawTextAligned(pd.metadata.version .. ' - ' .. 'made by rae', 390, 10, kTextAlignment.right)
 		assets.newsleak:drawTextAligned('for playjam 6', 390, 30, kTextAlignment.right)
 		assets.newsleak:drawTextAligned('Let\'s play a round!', 390, 170, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('Wait... how do I play?', 390, 190, kTextAlignment.right)
+		assets.newsleak:drawTextAligned('Wait... what\'s going on again?', 390, 190, kTextAlignment.right)
 		assets.newsleak:drawTextAligned('Let\'s change some options.', 390, 210, kTextAlignment.right)
 		assets.newsleak:drawText('Press Ⓐ to do this.', 10, 150 + (20 * vars.selection))
 		gfx.setColor(gfx.kColorXOR)
@@ -78,4 +79,6 @@ function title:init(...)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	end)
 	self:add()
+
+	newmusic('audio/music/basementfloor', true)
 end
