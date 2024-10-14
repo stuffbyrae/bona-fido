@@ -3,6 +3,6 @@ author=rae
 description=Turns out the afterlife's not as bad as they say! Well, except for all the terrifying monsters, at least.
 bundleID=wtf.rae.bonafido
 version=1.0.0
-buildNumber=711
+buildNumber=860
 imagePath=images/system
 launchSoundPath=audio/sfx/bark

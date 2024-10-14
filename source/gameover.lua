@@ -98,14 +98,14 @@ function gameover:init(...)
 		end
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
 		assets.newsleak:drawTextAligned('Game Over!', 300, 30, kTextAlignment.center)
-		assets.newsleak:drawTextAligned('I died at level ' .. vars.level .. ',', 300, 60, kTextAlignment.center)
-		assets.newsleak:drawTextAligned('and scored ' .. vars.score .. ' pts.', 300, 80, kTextAlignment.center)
+		assets.newsleak:drawTextAligned('I died at level ' .. commalize(vars.level) .. ',', 300, 60, kTextAlignment.center)
+		assets.newsleak:drawTextAligned('and scored ' .. commalize(vars.score) .. ' pts.', 300, 80, kTextAlignment.center)
 		if vars.newbest then
 			assets.newsleak:drawTextAligned('That\'s a new high score!', 300, 110, kTextAlignment.center)
 			assets.newsleak:drawTextAligned('Good job!', 300, 130, kTextAlignment.center)
 		else
 			assets.newsleak:drawTextAligned('My current best', 300, 110, kTextAlignment.center)
-			assets.newsleak:drawTextAligned('is ' .. save.score .. ' pts.', 300, 130, kTextAlignment.center)
+			assets.newsleak:drawTextAligned('is ' .. commalize(save.score) .. ' pts.', 300, 130, kTextAlignment.center)
 		end
 		assets.newsleak:drawTextAligned('Let\'s play another round, why not?', 390, 190, kTextAlignment.right)
 		assets.newsleak:drawTextAligned('I think I\'ll head back to the title menu.', 390, 210, kTextAlignment.right)

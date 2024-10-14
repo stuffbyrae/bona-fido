@@ -18,7 +18,7 @@ function game:init(...)
 
 	assets = { -- All assets go here. Images, sounds, fonts, etc.
 		newsleak = gfx.font.new('fonts/newsleak-bold'),
-		collision = gfx.image.new(400, 240, gfx.kColorClear),
+		collision = gfx.image.new('images/gameplay'),
 		fido = gfx.imagetable.new('images/fido'),
 		jump = smp.new('audio/sfx/jump'),
 		run = smp.new('audio/sfx/run'),
@@ -33,6 +33,16 @@ function game:init(...)
 		enemy1 = gfx.imagetable.new('images/enemy1'),
 		enemy2 = gfx.imagetable.new('images/enemy2'),
 		enemy3 = gfx.imagetable.new('images/enemy3'),
+		digup = smp.new('audio/sfx/digup'),
+		digging = smp.new('audio/sfx/digging'),
+		digup_img = gfx.imagetable.new('images/digup'),
+		digup1 = gfx.image.new('images/digup1'),
+		digup2 = gfx.image.new('images/digup2'),
+		digup3 = gfx.image.new('images/digup3'),
+		digup4 = gfx.image.new('images/digup4'),
+		digup5 = gfx.image.new('images/digup5'),
+		digup6 = gfx.image.new('images/digup6'),
+		digup7 = gfx.image.new('images/digup7'),
 	}
 
 	function draw_block(x, y, width, height, num)
@@ -44,10 +54,9 @@ function game:init(...)
 			gfx.fillRect(x+2, y+2, width-4, height-4)
 		elseif num == 3 then -- Mud platform drawing
 			gfx.setColor(gfx.kColorWhite)
-			gfx.setDitherPattern(0.5, gfx.image.kDitherTypeDiagonalLine)
+			gfx.setDitherPattern(0.75, gfx.image.kDitherTypeDiagonalLine)
 			gfx.fillRect(x, y, width, height)
 			gfx.setColor(gfx.kColorBlack)
-			gfx.setDitherPattern(0.5, gfx.image.kDitherTypeDiagonalLine)
 			gfx.fillRect(x+2, y+2, width-4, height-4)
 		elseif num == 4 then -- Ice platform drawing
 			gfx.setColor(gfx.kColorWhite)
@@ -68,7 +77,7 @@ function game:init(...)
 			platform = 2,
 			platform_mud = 3,
 			platform_ice = 4,
-			pickup = 5,
+			digup = 5,
 			enemy = 6,
 			bark = 7,
 		},
@@ -196,10 +205,13 @@ function game:init(...)
 		for i = 1, vars.lives do
 			assets.life:draw(-15 + (25 * i), 10)
 		end
-		-- Draw the score
+		-- Draw the score & level indicator
+		if vars.show_level then
+			gfx.fillRect(150, 100, 100, 19)
+		end
 		gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-		if vars.show_level then assets.newsleak:drawTextAligned('Level ' .. vars.level, 200, 100, kTextAlignment.center) end
-		assets.newsleak:drawTextAligned(vars.score, 390, 10, kTextAlignment.right)
+		if vars.show_level then assets.newsleak:drawTextAligned('Level ' .. commalize(vars.level), 200, 100, kTextAlignment.center) end
+		assets.newsleak:drawTextAligned(commalize(vars.score), 390, 10, kTextAlignment.right)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	end)
 
@@ -212,7 +224,7 @@ function game:init(...)
 		self:moveTo(200, 210)
 		self:setTag(vars.tags.fido)
 		self.control = false
-		self.invincible = true
+		self.invincible = false
 		self.barking = false
 		self.landing = false
 		self.left = false
@@ -266,18 +278,18 @@ function game:init(...)
 		local collisions
 		local length
 
-	if self.control then
-		actualx, actualy, collisions, length = self:moveWithCollisions(x + self.horispeed, y + self.velocity)
-	else
-		self:moveBy(self.deathspeed, -math.abs(self.deathspeed) / 2)
-		if self.deathspeed >= 0 then
-			self.deathspeed -= 0.25
-			self.deathspeed = math.max(self.deathspeed, 0)
-		elseif self.deathspeed <= 0 then
-			self.deathspeed += 0.25
-			self.deathspeed = math.min(self.deathspeed, 0)
+		if self.control then
+			actualx, actualy, collisions, length = self:moveWithCollisions(x + self.horispeed, y + self.velocity)
+		else
+			self:moveBy(self.deathspeed, -math.abs(self.deathspeed) / 2)
+			if self.deathspeed >= 0 then
+				self.deathspeed -= 0.25
+				self.deathspeed = math.max(self.deathspeed, 0)
+			elseif self.deathspeed <= 0 then
+				self.deathspeed += 0.25
+				self.deathspeed = math.min(self.deathspeed, 0)
+			end
 		end
-	end
 
 		if length ~= nil and length > 0 then -- If there are any collisions...
 			for i = 1, #collisions do
@@ -412,10 +424,8 @@ function game:init(...)
 		if self.control and not self.barking then
 			if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			self.barking = true
-			sprites.bark:add()
 			pd.timer.performAfterDelay(50, function()
 				self.barking = false
-				sprites.bark:remove()
 			end)
 		end
 	end
@@ -452,7 +462,7 @@ function game:init(...)
 		end
 	end
 	function game_fido:collisionResponse(other)
-		if other:getTag() == 6 or other:getTag() == 7 then
+		if other:getTag() == 5 or other:getTag() == 6 or other:getTag() == 7 then
 			return gfx.sprite.kCollisionTypeOverlap
 		else
 			return gfx.sprite.kCollisionTypeSlide
@@ -465,6 +475,8 @@ function game:init(...)
 		self:setSize(60, 40)
 		self:setCollideRect(0, 0, 60, 40)
 		self:setTag(vars.tags.bark)
+		self.blank = gfx.image.new(60, 40)
+		self:add()
 	end
 	function game_bark:update()
 		if sprites.fido.direction == "left" then
@@ -473,22 +485,125 @@ function game:init(...)
 			self:moveTo((sprites.fido.x + 20) % 400, sprites.fido.y - 15)
 		end
 
-		self:setImage(assets.bark_img[math.floor(vars.bark_timer.value)])
+		if sprites.fido.barking then
+			self:setImage(assets.bark_img[math.floor(vars.bark_timer.value)])
+		else
+			self:setImage(self.blank)
+		end
 
 		-- Sprite flipping code
 		if sprites.fido.direction == "left" then self:setImageFlip('unflipped') end
 		if sprites.fido.direction == "right" then self:setImageFlip('flipX') end
 	end
 
+	class('game_digup').extends(gfx.sprite)
+	function game_digup:init(x, y, type)
+		game_digup.super.init(self)
+		self:moveTo(x, y)
+		self:setSize(32, 50)
+		self:setCollideRect(0, 0, 32, 50)
+		self:setTag(vars.tags.digup)
+		self.progress = 0
+		self.dug = false
+		self.dug_timer = pd.timer.new(0, 18, 18)
+		self.dug_timer.discardOnCompletion = false
+		if save.sfx then assets.digup:play() end
+		self.anim_timer = pd.timer.new(500, 1, 6)
+		self:setCenter(0.5, 1)
+		self.type = type
+		self:add()
+	end
+	function game_digup:update()
+		local actualx, actualy, collisions, length = self:moveWithCollisions(self.x, self.y)
+
+		local fido_hit = false
+
+		if length > 0 then
+			for i = 1, length do
+				local tag = collisions[i].other:getTag()
+				if tag == 1 then
+					fido_hit = true
+				end
+			end
+		end
+
+		if not sprites.fido.control then fido_hit = false end
+		if self.dug then fido_hit = false end
+
+		if fido_hit then
+			local crank = pd.getCrankChange()
+			if crank == 0 then
+				self.progress = 0
+				if save.sfx then assets.digging:stop() end
+			else
+				self.progress += crank
+				if self.progress >= 1800 then
+					self:dig()
+				end
+				if save.sfx and not assets.digging:isPlaying() then assets.digging:play(0) end
+			end
+		else
+			self.progress = 0
+			if save.sfx then assets.digging:stop() end
+		end
+		self:markDirty()
+	end
+	function game_digup:draw()
+		if self.dug then
+			assets['digup' .. self.type]:draw(0, self.dug_timer.value)
+		else
+			assets.digup_img[math.floor(self.anim_timer.value)]:draw(0, 18)
+		end
+	end
+	function game_digup:dig()
+		if not self.dug then
+			self.dug = true
+			self.dug_timer:resetnew(1000, 32, 0, pd.easingFunctions.outSine)
+			if self.type == 1 then
+				game:changescore(100)
+				if save.sfx then assets.win:play(1, 2) end
+			elseif self.type == 2 then
+				game:changescore(300)
+				if save.sfx then assets.win:play(1, 2) end
+			elseif self.type == 3 then
+				game:changescore(500)
+				if save.sfx then assets.win:play(1, 2) end
+			elseif self.type == 4 then
+				vars.lives += 1
+				if save.sfx then assets.win:play() end
+				gfx.sprite.redrawBackground()
+			elseif self.type == 5 then
+				game:changescore(-100)
+				if save.sfx then assets.die:play() end
+			elseif self.type == 6 then
+				game:changescore(-250)
+				if save.sfx then assets.die:play() end
+			elseif self.type == 7 then
+				sprites.fido:die(0)
+			end
+			gfx.sprite.redrawBackground()
+			if save.sfx then assets.digging:stop() end
+			pd.timer.performAfterDelay(1000, function()
+				pd.timer.performAfterDelay(math.random(15000, 20000), function()
+					game:new_digup()
+				end)
+				self:remove()
+			end)
+		end
+	end
+	function game_digup:collisionResponse()
+		return gfx.sprite.kCollisionTypeOverlap
+	end
+
 	class('game_enemy').extends(gfx.sprite)
-	function game_enemy:init(type, x, y, direction)
+	function game_enemy:init(type, x, y, direction, slot)
 		game_enemy.super.init(self)
-		self:setImage(gfx.image.new(32, 32, gfx.kColorWhite))
 		self:setCenter(0.5, 1)
 		self:setCollideRect(0, 0, 32, 32)
 		self:moveTo(x, y)
 		self:setTag(vars.tags.enemy)
 		self.dead = false
+		self.slot = slot
 		self.queuedfordeletion = false
 		self.type = type -- 1, 2, or 3.
 		self.direction = direction
@@ -538,10 +653,10 @@ function game:init(...)
 				self.direction = "right"
 			end
 
-			actualx, actualy, collisions, length = self:moveWithCollisions(x + self.horispeed, y + self.velocity)
+			local actualx, actualy, collisions, length = self:moveWithCollisions(x + self.horispeed, y + self.velocity)
 
 			if length > 0 then
-				for i = 1, #collisions do
+				for i = 1, length do
 					local tag = collisions[i].other:getTag() -- Store the tag.
 					local collx, colly = collisions[i].normal:unpack() -- Collision normal to determine hit directions
 					if tag == 2 or tag == 3 or tag == 4 then -- 2, 3, and 4 indicate the three platform types.
@@ -703,8 +818,9 @@ function game:init(...)
 			end
 			if self.y >= 240 and not self.queuedfordeletion then
 				self.queuedfordeletion = true
+				self:remove()
 				pd.timer.performAfterDelay(1000, function()
-					game:new_enemy()
+					game:new_enemy(self.slot)
 				end)
 			end
 		end
@@ -721,7 +837,7 @@ function game:init(...)
 			if save.sfx then assets.die:play() end
 			normal = normal or 0
 			self.dead = true
-			self.deathspeed = normal * 2
+			self.deathspeed = normal * 3
 			pd.timer.performAfterDelay(1, function()
 				self.velocity = -10
 			end)
@@ -739,7 +855,7 @@ function game:init(...)
 		if self.dead then
 			return gfx.sprite.kCollisionTypeOverlap
 		end
-		if other:getTag() == 1 or other:getTag() == 6 or other:getTag() == 7 then
+		if other:getTag() == 1 or other:getTag() == 5 or other:getTag() == 6 or other:getTag() == 7 then
 			return gfx.sprite.kCollisionTypeOverlap
 		else
 			return gfx.sprite.kCollisionTypeSlide
@@ -752,23 +868,23 @@ function game:init(...)
 	self:add()
 
 	pd.timer.performAfterDelay(2500, function()
-		pd.timer.performAfterDelay(500, function()
-			self:new_enemy()
+		pd.timer.performAfterDelay(1500, function()
+			self:new_enemy(1)
 		end)
-		pd.timer.performAfterDelay(2000, function()
-			self:new_enemy()
+		pd.timer.performAfterDelay(3000, function()
+			self:new_enemy(2)
 		end)
 		vars.show_level = false
 		sprites.fido.control = true
 		gfx.sprite.redrawBackground()
 		newmusic('audio/music/coolblast', true)
-		pd.timer.performAfterDelay(2000, function()
-			sprites.fido.invincible = false
+		pd.timer.performAfterDelay(math.random(1000, 2000), function()
+			self:new_digup()
 		end)
 	end)
 end
 
-function game:new_enemy()
+function game:new_enemy(slot)
 	if #vars.enemies == 0 then
 		if sprites.enemy1.queuedfordeletion and sprites.enemy2.queuedfordeletion and not vars.won and vars.lives > 0 then
 			self:win()
@@ -776,20 +892,69 @@ function game:new_enemy()
 		return
 	else
 		local random = math.random(1, #vars.enemies)
-		if sprites.enemy1 == nil then
-			sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32, "right")
-		elseif sprites.enemy1.queuedfordeletion then
-			sprites.enemy1:remove()
-			sprites.enemy1 = nil
-			sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32, "right")
-		elseif sprites.enemy2 == nil then
-			sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32, "left")
-		elseif sprites.enemy2.queuedfordeletion then
-			sprites.enemy2:remove()
-			sprites.enemy2 = nil
-			sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32, "left")
+		if slot == 1 then
+			if sprites.enemy1 == nil then
+				sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32, "right", 1)
+			else
+				sprites.enemy1:init(vars.enemies[random], 30, -32, "right", 1)
+			end
+		elseif slot == 2 then
+			if sprites.enemy2 == nil then
+				sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32, "left", 2)
+			else
+				sprites.enemy2:init(vars.enemies[random], 370, -32, "left", 2)
+			end
 		end
 		table.remove(vars.enemies, random)
+	end
+end
+
+function game:new_digup()
+	local level = math.random(1, 3)
+	local platform
+	local x = 0
+	local y = 0
+	local type = 1
+	local typerand = math.random(1, 22)
+	if level == 1 then
+		y = 210
+		x = math.random(16, 384)
+	elseif level == 2 then
+		y = 155
+		platform = math.random(1, 2)
+		if platform == 1 then
+			x = math.random(16, 116)
+		elseif platform == 2 then
+			x = math.random(284, 384)
+		end
+	elseif level == 3 then
+		y = 90
+		platform = math.random(1, 2)
+		if platform == 1 then
+			x = math.random(16, 76)
+		elseif platform == 2 then
+			x = math.random(317, 384)
+		end
+	end
+	if typerand == 1 or typerand == 2 or typerand == 3 or typerand == 4 then
+		type = 1
+	elseif typerand == 5 or typerand == 6 or typerand == 7 or typerand == 8 then
+		type = 2
+	elseif typerand == 9 or typerand == 10 or typerand == 11 or typerand == 12 then
+		type = 3
+	elseif typerand == 13 or typerand == 14 or typerand == 15 or typerand == 16 then
+		type = 4
+	elseif typerand == 17 or typerand == 18 or typerand == 19 then
+		type = 5
+	elseif typerand == 20 or typerand == 21 then
+		type = 6
+	elseif typerand == 22 then
+		type = 7
+	end
+	if sprites.digup == nil then
+		sprites.digup = game_digup(x, y, type)
+	else
+		sprites.digup:init(x, y, type)
 	end
 end
 
@@ -806,7 +971,7 @@ end
 
 function game:changescore(new)
 	local oldscore = vars.score
-	vars.score += newR
+	vars.score += new
 	if vars.score < 0 then vars.score = 0 end
 	if vars.score > oldscore then
 		for i = 1, 100 do

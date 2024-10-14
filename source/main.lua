@@ -119,6 +119,18 @@ function pd.timer:resetnew(duration, startValue, endValue, easingFunction)
     self.timerEndedCallback = self.timerEndedCallback
 end
 
+-- From http://lua-users.org/wiki/FormattingNumbers
+function commalize(amount)
+  local formatted = amount
+  while true do
+    formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+    if (k==0) then
+      break
+    end
+  end
+  return formatted
+end
+
 -- This function shakes the screen. int is a number representing intensity. time is a number representing duration
 function shakies(time, int)
     if pd.getReduceFlashing() or perf then -- If reduce flashing is enabled, then don't shake.
