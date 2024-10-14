@@ -878,7 +878,7 @@ function game:init(...)
 		sprites.fido.control = true
 		gfx.sprite.redrawBackground()
 		newmusic('audio/music/coolblast', true)
-		pd.timer.performAfterDelay(math.random(1000, 2000), function()
+		pd.timer.performAfterDelay(math.random(5000, 15000), function()
 			self:new_digup()
 		end)
 	end)
