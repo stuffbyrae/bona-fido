@@ -19,9 +19,13 @@ function gameover:init(...)
 		gameover2 = gfx.image.new('images/gameover2'),
 		newsleak = gfx.font.new('fonts/newsleak'),
 		tick = smp.new('audio/sfx/tick'),
-		bark = smp.new('audio/sfx/bark'),
 		thunder = smp.new('audio/sfx/thunder'),
 	}
+	if ribbit then
+		assets.bark = smp.new('audio/sfx/croak')
+	else
+		assets.bark = smp.new('audio/sfx/bark')
+	end
 
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
 		level = args[1],
@@ -50,6 +54,12 @@ function gameover:init(...)
 			end
 			if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			gfx.sprite.redrawBackground()
+		end,
+
+		BButtonDown = function()
+			stopmusic()
+			if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			scenemanager:switchscene(title)
 		end,
 
 		AButtonDown = function()
@@ -85,9 +95,18 @@ function gameover:init(...)
 	}
 	pd.inputHandlers.push(vars.gameoverHandlers)
 
-	if vars.score > save.score then
-		vars.newbest = true
-		save.score = vars.score
+	if ribbit then
+		if vars.score > save.ribbit_score then
+			vars.newbest = true
+			save.score = vars.ribbit_score
+		end
+		pd.scoreboards.addScore('ribbit', vars.score)
+	else
+		if vars.score > save.score then
+			vars.newbest = true
+			save.score = vars.score
+		end
+		pd.scoreboards.addScore('bona', vars.score)
 	end
 
 	gfx.sprite.setBackgroundDrawingCallback(function(width, height, x, y)
@@ -97,20 +116,20 @@ function gameover:init(...)
 			assets.gameover:draw(0, 0)
 		end
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
-		assets.newsleak:drawTextAligned('Game Over!', 300, 30, kTextAlignment.center)
-		assets.newsleak:drawTextAligned('I died at level ' .. commalize(vars.level) .. ',', 300, 60, kTextAlignment.center)
-		assets.newsleak:drawTextAligned('and scored ' .. commalize(vars.score) .. ' pts.', 300, 80, kTextAlignment.center)
+		assets.newsleak:drawTextAligned(text("gameover"), 300, 30, kTextAlignment.center)
+		assets.newsleak:drawTextAligned(text("gameover_1_1") .. commalize(vars.level) .. text("gameover_1_2"), 300, 60, kTextAlignment.center)
+		assets.newsleak:drawTextAligned(text("gameover_2_1") .. commalize(vars.score) .. text("gameover_2_2"), 300, 80, kTextAlignment.center)
 		if vars.newbest then
-			assets.newsleak:drawTextAligned('That\'s a new high score!', 300, 110, kTextAlignment.center)
-			assets.newsleak:drawTextAligned('Good job!', 300, 130, kTextAlignment.center)
+			assets.newsleak:drawTextAligned(text("newhigh"), 300, 110, kTextAlignment.center)
+			assets.newsleak:drawTextAligned(text("goodjob"), 300, 130, kTextAlignment.center)
 		else
-			assets.newsleak:drawTextAligned('My current best', 300, 110, kTextAlignment.center)
-			assets.newsleak:drawTextAligned('is ' .. commalize(save.score) .. ' pts.', 300, 130, kTextAlignment.center)
+			assets.newsleak:drawTextAligned(text("currentbest_1"), 300, 110, kTextAlignment.center)
+			assets.newsleak:drawTextAligned(text("currentbest_2") .. commalize(ribbit and save.ribbit_score or save.score) .. text("gameover_2_2"), 300, 130, kTextAlignment.center)
 		end
-		assets.newsleak:drawTextAligned('Let\'s play another round, why not?', 390, 190, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('I think I\'ll head back to the title menu.', 390, 210, kTextAlignment.right)
+		assets.newsleak:drawTextAligned(text("letsplayagain"), 390, 190, kTextAlignment.right)
+		assets.newsleak:drawTextAligned(text("gobacktotitle"), 390, 210, kTextAlignment.right)
 		if not vars.going then
-			assets.newsleak:drawText('Press Ⓐ to do this.', 10, 170 + (20 * vars.selection))
+			assets.newsleak:drawText(text("pressA"), 10, 170 + (20 * vars.selection))
 		end
 		gfx.setColor(gfx.kColorXOR)
 		gfx.fillRect(0, 170 + (20 * vars.selection), 400, 20)
@@ -119,5 +138,19 @@ function gameover:init(...)
 	end)
 	self:add()
 
-	newmusic('audio/music/ancientrite')
+	newmusic('audio/music/gameover')
+end
+
+function gameover:update()
+	local ticks = pd.getCrankTicks(5)
+	if ticks ~= 0 and vars.selection > 0 then
+		if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
+		vars.selection += ticks
+		if vars.selection < 1 then
+			vars.selection = #vars.selections
+		elseif vars.selection > #vars.selections then
+			vars.selection = 1
+		end
+		gfx.sprite.redrawBackground()
+	end
 end

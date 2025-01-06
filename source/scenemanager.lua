@@ -26,6 +26,13 @@ function scenemanager:loadnewscene()
 end
 
 function scenemanager:cleanupscene()
+    if classes ~= nil then
+        for i = #classes, 1, -1 do
+            classes[i] = nil
+        end
+        classes = nil
+    end
+    classes = {}
     gfx.sprite:removeAll()
     if sprites ~= nil then
         for i = 1, #sprites do

@@ -1,6 +1,9 @@
 import 'game'
 import 'howtoplay'
 import 'options'
+import 'credits'
+import 'highscores'
+import 'Tanuk_CodeSequence'
 
 -- Setting up consts
 local pd <const> = playdate
@@ -16,6 +19,35 @@ function title:init(...)
 	function pd.gameWillPause() -- When the game's paused...
 		local menu = pd.getSystemMenu()
 		menu:removeAllMenuItems()
+		if save.ribbitfound then
+			menu:addCheckmarkMenuItem(text('ribbit'), ribbit, function(bool)
+				ribbit = bool
+				gfx.sprite.redrawBackground()
+				if save.sfx then
+					if bool then
+						assets.croak:play()
+					else
+						assets.bark:play()
+					end
+				end
+			end)
+		end
+		menu:addMenuItem(text('highscores'), function()
+			if ribbit then
+				if save.sfx then assets.croak:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			else
+				if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			end
+			scenemanager:switchscene(highscores)
+		end)
+		menu:addMenuItem(text('credits'), function()
+			if ribbit then
+				if save.sfx then assets.croak:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			else
+				if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			end
+			scenemanager:switchscene(credits)
+		end)
 	end
 
 	assets = { -- All assets go here. Images, sounds, fonts, etc.
@@ -23,7 +55,23 @@ function title:init(...)
 		newsleak = gfx.font.new('fonts/newsleak'),
 		tick = smp.new('audio/sfx/tick'),
 		bark = smp.new('audio/sfx/bark'),
+		win = smp.new('audio/sfx/win'),
+		croak = smp.new('audio/sfx/croak'),
 	}
+
+	if not save.ribbitfound then
+		local sprCode = Tanuk_CodeSequence({pd.kButtonRight, pd.kButtonUp, pd.kButtonB, pd.kButtonDown, pd.kButtonUp, pd.kButtonB, pd.kButtonDown, pd.kButtonUp, pd.kButtonB}, function()
+			if save.sfx then
+				assets.win:play()
+				save.ribbitfound = true
+				ribbit = true
+				gfx.sprite.redrawBackground()
+				pd.timer.performAfterDelay(1000, function()
+					assets.croak:play()
+				end)
+			end
+		end)
+	end
 
 	vars = { -- All variables go here. Args passed in from earlier, scene variables, etc.
 		selection = 1,
@@ -51,7 +99,11 @@ function title:init(...)
 		end,
 
 		AButtonDown = function()
-			if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			if ribbit then
+				if save.sfx then assets.croak:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			else
+				if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
+			end
 			if vars.selections[vars.selection] == 'game' then
 				stopmusic()
 				scenemanager:switchscene(game)
@@ -67,12 +119,17 @@ function title:init(...)
 	gfx.sprite.setBackgroundDrawingCallback(function(width, height, x, y)
 		assets.title:draw(0, 0)
 		gfx.setImageDrawMode(gfx.kDrawModeNXOR)
-		assets.newsleak:drawTextAligned(pd.metadata.version .. ' - ' .. 'made by rae', 390, 10, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('for playjam 6', 390, 30, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('Let\'s play a round!', 390, 170, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('Wait... what\'s going on again?', 390, 190, kTextAlignment.right)
-		assets.newsleak:drawTextAligned('Let\'s change some options.', 390, 210, kTextAlignment.right)
-		assets.newsleak:drawText('Press Ⓐ to do this.', 10, 150 + (20 * vars.selection))
+		assets.newsleak:drawTextAligned("v" .. pd.metadata.version .. text("madebyrae"), 390, 10, kTextAlignment.right)
+		if ribbit then
+			assets.newsleak:drawTextAligned(text("ribbest") .. commalize(save.ribbit_score), 390, 30, kTextAlignment.right)
+			assets.newsleak:drawTextAligned(text("letsplay2"), 390, 170, kTextAlignment.right)
+		else
+			assets.newsleak:drawTextAligned(text("best") .. commalize(save.score), 390, 30, kTextAlignment.right)
+			assets.newsleak:drawTextAligned(text("letsplay"), 390, 170, kTextAlignment.right)
+		end
+		assets.newsleak:drawTextAligned(text("howtoplay"), 390, 190, kTextAlignment.right)
+		assets.newsleak:drawTextAligned(text("options"), 390, 210, kTextAlignment.right)
+		assets.newsleak:drawText(text("pressA"), 10, 150 + (20 * vars.selection))
 		gfx.setColor(gfx.kColorXOR)
 		gfx.fillRect(0, 150 + (20 * vars.selection), 400, 20)
 		gfx.setColor(gfx.kColorBlack)
@@ -80,5 +137,19 @@ function title:init(...)
 	end)
 	self:add()
 
-	newmusic('audio/music/basementfloor', true)
+	newmusic('audio/music/title', true)
+end
+
+function title:update()
+	local ticks = pd.getCrankTicks(5)
+	if ticks ~= 0 and vars.selection > 0 then
+		if save.sfx then assets.tick:play(1, 1 + (0.01 * math.random(-10, 10))) end
+		vars.selection += ticks
+		if vars.selection < 1 then
+			vars.selection = #vars.selections
+		elseif vars.selection > #vars.selections then
+			vars.selection = 1
+		end
+		gfx.sprite.redrawBackground()
+	end
 end

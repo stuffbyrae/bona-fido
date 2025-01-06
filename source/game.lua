@@ -14,21 +14,24 @@ function game:init(...)
 	function pd.gameWillPause() -- When the game's paused...
 		local menu = pd.getSystemMenu()
 		menu:removeAllMenuItems()
+		if sprites.fido.control then
+			menu:addMenuItem(text('endgame'), function()
+				vars.lives = 1
+				sprites.fido:die(0)
+			end)
+		end
 	end
 
 	assets = { -- All assets go here. Images, sounds, fonts, etc.
 		newsleak = gfx.font.new('fonts/newsleak-bold'),
 		collision = gfx.image.new('images/gameplay'),
-		fido = gfx.imagetable.new('images/fido'),
 		jump = smp.new('audio/sfx/jump'),
 		run = smp.new('audio/sfx/run'),
-		bark = smp.new('audio/sfx/bark'),
 		bonk = smp.new('audio/sfx/bonk'),
 		ground = smp.new('audio/sfx/ground'),
 		skid = smp.new('audio/sfx/skid'),
 		die = smp.new('audio/sfx/die'),
 		win = smp.new('audio/sfx/win'),
-		life = gfx.image.new('images/life'),
 		bark_img = gfx.imagetable.new('images/bark'),
 		enemy1 = gfx.imagetable.new('images/enemy1'),
 		enemy2 = gfx.imagetable.new('images/enemy2'),
@@ -44,6 +47,15 @@ function game:init(...)
 		digup6 = gfx.image.new('images/digup6'),
 		digup7 = gfx.image.new('images/digup7'),
 	}
+	if ribbit then
+		assets.bark = smp.new('audio/sfx/croak')
+		assets.fido = gfx.imagetable.new('images/ribbit')
+		assets.life = gfx.image.new('images/life_ribbit')
+	else
+		assets.bark = smp.new('audio/sfx/bark')
+		assets.fido = gfx.imagetable.new('images/fido')
+		assets.life = gfx.image.new('images/life')
+	end
 
 	function draw_block(x, y, width, height, num)
 		if num == 2 then -- Normal platform drawing
@@ -91,6 +103,7 @@ function game:init(...)
 		death_timer = pd.timer.new(0, 17, 17),
 		bark_timer = pd.timer.new(200, 1, 4.99),
 		enemy_timer = pd.timer.new(700, 1, 2.99),
+		dig_timer = pd.timer.new(350, 22, 25.99),
 		counter = 0,
 		enemies = {},
 	}
@@ -129,40 +142,39 @@ function game:init(...)
 			sprites.fido:bark()
 		end
 	}
-	pd.inputHandlers.push(vars.gameHandlers)
 
 	vars.walk_timer.repeats = true
 	vars.bark_timer.repeats = true
 	vars.enemy_timer.repeats = true
 	vars.death_timer.discardOnCompletion = false
+	vars.dig_timer.repeats = true
 
-	-- TODO: put platform terrain "generation" here
 	vars.ground:setTag(vars.tags.platform)
 
 	if vars.level % 7 == 0 then
 		vars.platform1:setTag(vars.tags.platform_ice)
-	elseif vars.level % 12 == 0 then
+	elseif vars.level % 10 == 0 then
 		vars.platform1:setTag(vars.tags.platform_mud)
 	else
 		vars.platform1:setTag(vars.tags.platform)
 	end
 	if vars.level % 3 == 0 then
 		vars.platform2:setTag(vars.tags.platform_ice)
-	elseif vars.level % 10 == 0 then
+	elseif vars.level % 9 == 0 then
 		vars.platform2:setTag(vars.tags.platform_mud)
 	else
 		vars.platform2:setTag(vars.tags.platform)
 	end
 	if vars.level % 6 == 0 then
 		vars.platform3:setTag(vars.tags.platform_ice)
-	elseif vars.level % 13 == 0 then
+	elseif vars.level % 11 == 0 then
 		vars.platform3:setTag(vars.tags.platform_mud)
 	else
 		vars.platform3:setTag(vars.tags.platform)
 	end
 	if vars.level % 5 == 0 then
 		vars.platform4:setTag(vars.tags.platform_ice)
-	elseif vars.level % 9 == 0 then
+	elseif vars.level % 8 == 0 then
 		vars.platform4:setTag(vars.tags.platform_ice)
 	else
 		vars.platform4:setTag(vars.tags.platform)
@@ -207,25 +219,33 @@ function game:init(...)
 		end
 		-- Draw the score & level indicator
 		if vars.show_level then
-			gfx.fillRect(150, 100, 100, 19)
+			gfx.fillRect(150, 85, 100, 45)
+			gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+			if sprites.fido.control then
+				if vars.show_level then assets.newsleak:drawTextAligned(text("ready"), 200, 105, kTextAlignment.center) end
+			end
+			if vars.show_level then assets.newsleak:drawTextAligned(text("level") .. commalize(vars.level), 200, 85, kTextAlignment.center) end
+			gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		end
 		gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-		if vars.show_level then assets.newsleak:drawTextAligned('Level ' .. commalize(vars.level), 200, 100, kTextAlignment.center) end
 		assets.newsleak:drawTextAligned(commalize(vars.score), 390, 10, kTextAlignment.right)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	end)
 
-	class('game_fido').extends(gfx.sprite)
-	function game_fido:init()
-		game_fido.super.init(self)
+	class('game_fido', _, classes).extends(gfx.sprite)
+	function classes.game_fido:init()
+		classes.game_fido.super.init(self)
 		self:setCenter(0.5, 1)
 		self:setImage(assets.fido[1])
-		self:setCollideRect(0, 0, 32, 32)
-		self:moveTo(200, 210)
+		self:setCollideRect(6, 6, 20, 26)
+		self:setZIndex(4)
+		self:moveTo(200, 200)
 		self:setTag(vars.tags.fido)
 		self.control = false
 		self.invincible = false
 		self.barking = false
+		self.barkcooldown = false
+		self.digging = false
 		self.landing = false
 		self.left = false
 		self.right = false
@@ -239,12 +259,12 @@ function game:init(...)
 		self.jumping = false
 		self:add()
 	end
-	function game_fido:update()
+	function classes.game_fido:update()
 		local x = self.x
 		local y = self.y
 
 		-- Governing run SFX
-		if save.sfx and (self.left or self.right) then -- If the player's running, then
+		if save.sfx and (self.left or self.right) and not ribbit and not self.digging then -- If the player's running, then
 			if assets.run:isPlaying() then -- Make sure the SFX isn't playing already.
 				if self.velocity ~= 0 then -- If the player's not on the ground,
 					assets.run:stop() -- stop it!
@@ -297,9 +317,15 @@ function game:init(...)
 				local collx, colly = collisions[i].normal:unpack() -- Collision normal to determine hit directions
 				if tag == 2 or tag == 3 or tag == 4 then -- 2, 3, and 4 indicate the three platform types.
 					-- Horizontal movement speeds
-					self.movemax = 5 -- The max speed
-					self.speedup = 0.75 -- The rate at which the player speeds up (per frame)
-					self.slowdown = 1 -- The rate at which the player comes to a stop.
+					if ribbit then
+						self.movemax = 7 -- The max speed
+						self.speedup = 1.25 -- The rate at which the player speeds up (per frame)
+						self.slowdown = 4 -- The rate at which the player comes to a stop.
+					else
+						self.movemax = 5 -- The max speed
+						self.speedup = 0.75 -- The rate at which the player speeds up (per frame)
+						self.slowdown = 1 -- The rate at which the player comes to a stop.
+					end
 					if tag == 3 then -- For muddy platforms,
 						self.movemax /= 2 -- make the player slower.
 					elseif tag == 4 then -- For icy platforms,
@@ -330,18 +356,35 @@ function game:init(...)
 			end
 		end
 
+		if pd.buttonIsPressed('up') and self.control then self:setImage(assets.fido[20]) end
+		if pd.buttonIsPressed('down') and self.control then self:setImage(assets.fido[21]) end
+
 		if not self.jumping and self.velocity == 0 then -- If the player's not jumping or falling,
-			if (self.left or self.right) then -- If they're walking,
+			if (self.left or self.right) and not ribbit then -- If they're walking,
 				self:setImage(assets.fido[math.floor(vars.walk_timer.value)]) -- display the walking sprite.
 			end
-			if (self.left and self.horispeed > 0) or (self.right and self.horispeed < 0) then -- If they're skidding (pressing one way, walking another);
+			if (self.left and self.horispeed > 0) or (self.right and self.horispeed < 0) and not ribbit then -- If they're skidding (pressing one way, walking another);
 				self:setImage(assets.fido[7]) -- show the skid sprite,
 				if save.sfx then assets.skid:play(1, 1 + (0.01 * math.random(-10, 10))) end -- and play the skid SFX.
 			end
 		end
 
+		local crank = pd.getCrankChange()
+		if #playdate.inputHandlers > 1 and self.control then
+			if crank == 0 then
+				if save.sfx then assets.digging:stop() end
+				self.digging = false
+			else
+				self.digging = true
+				if save.sfx and not assets.digging:isPlaying() then assets.digging:play(0) end
+			end
+		else
+			if save.sfx then assets.digging:stop() end
+			self.digging = false
+		end
+
 		-- Movement code
-		if self.left then
+		if self.left and ((ribbit and self.jumping) or not ribbit) and not self.digging then
 			if self.horispeed > -self.movemax then -- If the player's not at the movement speed yet,
 				if self.horispeed > 0 then -- If they're turning around,
 					self.horispeed -= 0 -- do nothing, let the slowdown code handle it.
@@ -359,7 +402,7 @@ function game:init(...)
 		end
 
 		-- Movement code, this time to the right. Follow the comments above.
-		if self.right then
+		if self.right and ((ribbit and self.jumping) or not ribbit) and not self.digging then
 			if self.horispeed < self.movemax then
 				if self.horispeed < 0 then
 					self.horispeed += 0
@@ -388,8 +431,8 @@ function game:init(...)
 		if x < 0 then self:moveTo(400, y) end
 		if x > 400 then self:moveTo(0, y) end
 
-		if pd.buttonIsPressed('up') and self.control then self:setImage(assets.fido[20]) end
-		if pd.buttonIsPressed('down') and self.control then self:setImage(assets.fido[21]) end
+		if self.digging then self:setImage(assets.fido[math.floor(vars.dig_timer.value)]) end
+
 		if self.barking then self:setImage(assets.fido[18]) end
 		if self.landing then self:setImage(assets.fido[10]) end
 
@@ -404,32 +447,36 @@ function game:init(...)
 		end
 
 		-- SFX stereo panning
-		assets.run:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
-		assets.jump:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
-		assets.skid:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
-		assets.bonk:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
-		assets.bark:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
-		assets.ground:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
-		assets.die:setVolume(map(sprites.fido.x, 0, 400, 0.8, 0.2), map(sprites.fido.x, 0, 400, 0.2, 0.8))
+		assets.run:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.jump:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.skid:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.bonk:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.bark:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.ground:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.die:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
 	end
-	function game_fido:jump()
-		if not self.jumping and self.velocity == 0 and self.control then
+	function classes.game_fido:jump()
+		if not self.jumping and self.velocity == 0 and not self.digging and self.control then
 			self.velocity = -19
 			self.jumping = true
 			self.horispeed /= 1.1
 			if save.sfx then assets.jump:play(1, 1 + (0.01 * math.random(-10, 10))) end
 		end
 	end
-	function game_fido:bark()
-		if self.control and not self.barking then
+	function classes.game_fido:bark()
+		if self.control and not self.barking and not self.digging and not self.barkcooldown then
 			if save.sfx then assets.bark:play(1, 1 + (0.01 * math.random(-10, 10))) end
 			self.barking = true
+			self.barkcooldown = true
 			pd.timer.performAfterDelay(50, function()
 				self.barking = false
 			end)
+			pd.timer.performAfterDelay(350, function()
+				self.barkcooldown = false
+			end)
 		end
 	end
-	function game_fido:die(normal)
+	function classes.game_fido:die(normal)
 		if self.control then
 			shakies()
 			shakies_y()
@@ -461,7 +508,7 @@ function game:init(...)
 			end)
 		end
 	end
-	function game_fido:collisionResponse(other)
+	function classes.game_fido:collisionResponse(other)
 		if other:getTag() == 5 or other:getTag() == 6 or other:getTag() == 7 then
 			return gfx.sprite.kCollisionTypeOverlap
 		else
@@ -469,16 +516,16 @@ function game:init(...)
 		end
 	end
 
-	class('game_bark').extends(gfx.sprite)
-	function game_bark:init()
-		game_bark.super.init(self)
+	class('game_bark', _, classes).extends(gfx.sprite)
+	function classes.game_bark:init()
+		classes.game_bark.super.init(self)
 		self:setSize(60, 40)
 		self:setCollideRect(0, 0, 60, 40)
 		self:setTag(vars.tags.bark)
 		self.blank = gfx.image.new(60, 40)
 		self:add()
 	end
-	function game_bark:update()
+	function classes.game_bark:update()
 		if sprites.fido.direction == "left" then
 			self:moveTo((sprites.fido.x - 20) % 400, sprites.fido.y - 15)
 		elseif sprites.fido.direction == "right" then
@@ -496,12 +543,12 @@ function game:init(...)
 		if sprites.fido.direction == "right" then self:setImageFlip('flipX') end
 	end
 
-	class('game_digup').extends(gfx.sprite)
-	function game_digup:init(x, y, type)
-		game_digup.super.init(self)
+	class('game_digup', _, classes).extends(gfx.sprite)
+	function classes.game_digup:init(x, y, type)
+		classes.game_digup.super.init(self)
 		self:moveTo(x, y)
-		self:setSize(32, 50)
-		self:setCollideRect(0, 0, 32, 50)
+		self:setSize(34, 50)
+		self:setCollideRect(0, 0, 34, 50)
 		self:setTag(vars.tags.digup)
 		self.progress = 0
 		self.dug = false
@@ -513,7 +560,7 @@ function game:init(...)
 		self.type = type
 		self:add()
 	end
-	function game_digup:update()
+	function classes.game_digup:update()
 		local actualx, actualy, collisions, length = self:moveWithCollisions(self.x, self.y)
 
 		local fido_hit = false
@@ -530,34 +577,38 @@ function game:init(...)
 		if not sprites.fido.control then fido_hit = false end
 		if self.dug then fido_hit = false end
 
-		if fido_hit then
+		if fido_hit and sprites.fido.digging then
 			local crank = pd.getCrankChange()
 			if crank == 0 then
-				self.progress = 0
-				if save.sfx then assets.digging:stop() end
+				self.progress -= 100
+				if self.progress < 0 then self.progress = 0 end
 			else
 				self.progress += crank
 				if self.progress >= 1800 then
 					self:dig()
 				end
-				if save.sfx and not assets.digging:isPlaying() then assets.digging:play(0) end
 			end
 		else
 			self.progress = 0
-			if save.sfx then assets.digging:stop() end
 		end
+
+		-- SFX stereo panning
+		assets.win:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.digging:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
+		assets.digup:setVolume(map(self.x, 0, 400, 0.8, 0.2), map(self.x, 0, 400, 0.2, 0.8))
 		self:markDirty()
 	end
-	function game_digup:draw()
+	function classes.game_digup:draw()
 		if self.dug then
 			assets['digup' .. self.type]:draw(0, self.dug_timer.value)
 		else
 			assets.digup_img[math.floor(self.anim_timer.value)]:draw(0, 18)
 		end
 	end
-	function game_digup:dig()
+	function classes.game_digup:dig()
 		if not self.dug then
 			self.dug = true
+			self:setZIndex(5)
 			self.dug_timer:resetnew(1000, 32, 0, pd.easingFunctions.outSine)
 			if self.type == 1 then
 				game:changescore(100)
@@ -584,22 +635,22 @@ function game:init(...)
 			gfx.sprite.redrawBackground()
 			if save.sfx then assets.digging:stop() end
 			pd.timer.performAfterDelay(1000, function()
-				pd.timer.performAfterDelay(math.random(15000, 20000), function()
+				pd.timer.performAfterDelay(math.random(10000, 15000), function()
 					game:new_digup()
 				end)
 				self:remove()
 			end)
 		end
 	end
-	function game_digup:collisionResponse()
+	function classes.game_digup:collisionResponse()
 		return gfx.sprite.kCollisionTypeOverlap
 	end
 
-	class('game_enemy').extends(gfx.sprite)
-	function game_enemy:init(type, x, y, direction, slot)
-		game_enemy.super.init(self)
+	class('game_enemy', _, classes).extends(gfx.sprite)
+	function classes.game_enemy:init(type, x, y, direction, slot)
+		classes.game_enemy.super.init(self)
 		self:setCenter(0.5, 1)
-		self:setCollideRect(0, 0, 32, 32)
+		self:setCollideRect(0, 0, 34, 34)
 		self:moveTo(x, y)
 		self:setTag(vars.tags.enemy)
 		self.dead = false
@@ -628,7 +679,7 @@ function game:init(...)
 		self.slowdown = 0.5
 		self:add()
 	end
-	function game_enemy:update()
+	function classes.game_enemy:update()
 		local x = self.x
 		local y = self.y
 
@@ -825,14 +876,14 @@ function game:init(...)
 			end
 		end
 	end
-	function game_enemy:jump()
+	function classes.game_enemy:jump()
 		if not self.jumping and self.velocity == 0 then
 			self.velocity = -21
 			self.jumping = true
 			self.horispeed /= 1.1
 		end
 	end
-	function game_enemy:die(normal)
+	function classes.game_enemy:die(normal)
 		if not self.dead then
 			if save.sfx then assets.die:play() end
 			normal = normal or 0
@@ -851,7 +902,7 @@ function game:init(...)
 			gfx.sprite.redrawBackground()
 		end
 	end
-	function game_enemy:collisionResponse(other)
+	function classes.game_enemy:collisionResponse(other)
 		if self.dead then
 			return gfx.sprite.kCollisionTypeOverlap
 		end
@@ -863,24 +914,38 @@ function game:init(...)
 	end
 
 	-- Set the sprites
-	sprites.fido = game_fido()
-	sprites.bark = game_bark()
+	sprites.fido = classes.game_fido()
+	sprites.bark = classes.game_bark()
 	self:add()
 
 	pd.timer.performAfterDelay(2500, function()
-		pd.timer.performAfterDelay(1500, function()
-			self:new_enemy(1)
-		end)
-		pd.timer.performAfterDelay(3000, function()
-			self:new_enemy(2)
-		end)
-		vars.show_level = false
-		sprites.fido.control = true
 		gfx.sprite.redrawBackground()
-		newmusic('audio/music/coolblast', true)
-		pd.timer.performAfterDelay(math.random(5000, 15000), function()
-			self:new_digup()
-		end)
+		sprites.fido.control = true
+	end)
+
+	newmusic('audio/music/roundstart')
+
+	pd.timer.performAfterDelay(4500, function()
+		stopmusic()
+		if ribbit then
+			newmusic('audio/music/gameplay_ribbit', true, 1.555)
+		else
+			newmusic('audio/music/gameplay', true, 1.555)
+		end
+		if sprites.fido.control then
+			pd.timer.performAfterDelay(1500, function()
+				self:new_enemy(1)
+			end)
+			pd.timer.performAfterDelay(3000, function()
+				self:new_enemy(2)
+			end)
+			vars.show_level = false
+			pd.inputHandlers.push(vars.gameHandlers)
+			gfx.sprite.redrawBackground()
+			pd.timer.performAfterDelay(math.random(4000, 12500), function()
+				self:new_digup()
+			end)
+		end
 	end)
 end
 
@@ -894,13 +959,13 @@ function game:new_enemy(slot)
 		local random = math.random(1, #vars.enemies)
 		if slot == 1 then
 			if sprites.enemy1 == nil then
-				sprites.enemy1 = game_enemy(vars.enemies[random], 30, -32, "right", 1)
+				sprites.enemy1 = classes.game_enemy(vars.enemies[random], 30, -32, "right", 1)
 			else
 				sprites.enemy1:init(vars.enemies[random], 30, -32, "right", 1)
 			end
 		elseif slot == 2 then
 			if sprites.enemy2 == nil then
-				sprites.enemy2 = game_enemy(vars.enemies[random], 370, -32, "left", 2)
+				sprites.enemy2 = classes.game_enemy(vars.enemies[random], 370, -32, "left", 2)
 			else
 				sprites.enemy2:init(vars.enemies[random], 370, -32, "left", 2)
 			end
@@ -910,6 +975,7 @@ function game:new_enemy(slot)
 end
 
 function game:new_digup()
+	if not sprites.fido.control then return end
 	local level = math.random(1, 3)
 	local platform
 	local x = 0
@@ -942,17 +1008,17 @@ function game:new_digup()
 		type = 2
 	elseif typerand == 9 or typerand == 10 or typerand == 11 or typerand == 12 then
 		type = 3
-	elseif typerand == 13 or typerand == 14 or typerand == 15 or typerand == 16 then
+	elseif typerand == 13 or typerand == 14 or typerand == 15 then
 		type = 4
-	elseif typerand == 17 or typerand == 18 or typerand == 19 then
+	elseif typerand == 16 or typerand == 17 or typerand == 18 then
 		type = 5
-	elseif typerand == 20 or typerand == 21 then
+	elseif typerand == 19 or typerand == 20 then
 		type = 6
-	elseif typerand == 22 then
+	elseif typerand == 21 or typerand == 22 then
 		type = 7
 	end
 	if sprites.digup == nil then
-		sprites.digup = game_digup(x, y, type)
+		sprites.digup = classes.game_digup(x, y, type)
 	else
 		sprites.digup:init(x, y, type)
 	end
@@ -963,6 +1029,7 @@ function game:win()
 	sprites.fido.control = false
 	stopmusic()
 	gfx.sprite.redrawBackground()
+	assets.win:setVolume(0.8, 0.8)
 	if save.sfx then assets.win:play() end
 	pd.timer.performAfterDelay(2500, function()
 		scenemanager:switchscene(game, vars.level + 1, vars.score, vars.lives)

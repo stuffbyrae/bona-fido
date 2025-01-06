@@ -1,6 +1,9 @@
+classes = {} -- fuck this
+
 -- Importing things
 import 'CoreLibs/math'
 import 'CoreLibs/timer'
+import 'CoreLibs/crank'
 import 'CoreLibs/object'
 import 'CoreLibs/sprites'
 import 'CoreLibs/graphics'
@@ -24,8 +27,10 @@ function savecheck()
     save = pd.datastore.read()
     if save == nil then save = {} end
     save.score = save.score or 0
+    save.ribbit_score = save.ribbit_score or 0
     if save.music == nil then save.music = true end
     if save.sfx == nil then save.sfx = true end
+    if save.ribbitfound == nil then save.ribbitfound = false end
 end
 
 -- ... now we run that!
@@ -39,6 +44,8 @@ end
 function pd.deviceWillSleep()
     pd.datastore.write(save)
 end
+
+ribbit = false
 
 -- Setting up music
 music = nil

@@ -1,0 +1,103 @@
+"pressA" = "Press Ⓐ to do this."
+
+"madebyrae" = " - made by rae"
+"letsplay" = "Let\'s play a round!"
+"letsplay2" = "RIB-BIT!"
+"best" = "Best: "
+"ribbest" = "Rib-best: "
+"howtoplay" = "Wait... what\'s going on again?"
+"options" = "Let\'s change some options."
+"highscores" = "High Scores"
+"credits" = "Credits"
+"ribbit" = "Rib-bit"
+
+
+
+"howtoplay1" = "Okay, let me run through this in my head one more time:\nMy name\'s Fido. I\'m a dog, but really I\'m nothing but a bag\nof bones. The afterlife\'s pretty nice; it\'s a bit repetitive, but\nI can get used to it. It\'s pretty chill! ...Well, aside from all the\nunmentionable horrors that are out to kill me again.\n\nMaybe if I keep running around, I can find a way outta\nthis place? Or at least set some new high scores."
+"howtoplay2" = "Let\'s take a more abstract approach to this:\nThe d-pad runs around. A button jumps, B button barks.\nThe Crank helps me dig up opportune stuff in the ground.\n\nRun around and dodge the enemies; bark to kill \'em and\nmove up to a harder (but higher-scoring) level.\n\nI\'ve got three "lives" (hah) - if I run out, it\'s game over."
+"howtoplay3" = "So, enemies, obviously,\nare bad. If I run into them\nthey\'ll kill me (...again), as\nquick as can be. Luckily,\nmy bark seems to shut \'em\nup and make \'em go away.\nThe B button will make me\nbark, in a pinch..."
+"howtoplay4" = "Those are Dig-ups. Some are\ngood, some are bad, but I\ndon\'t know what\'s what until\nI go fish it out. If there\'s\nsomething buried in the\nground, use the Crank to dig\nit up before it disappears.\nTrick or treat!"
+
+"howtoplay_ask1" = "...I still don\'t understand."
+"howtoplay_ask2" = "Wicked! What about those enemies?"
+"howtoplay_ask3" = "And the stuff in the ground sometimes?"
+"howtoplay_ask4" = "Wait...I lost my train of thought."
+
+"howtoplay_enemy1_name" = "Cap\'n Slow"
+"howtoplay_enemy2_name" = "King Confuzzle"
+"howtoplay_enemy3_name" = "Quack Reaper"
+
+"howtoplay_enemy1_desc" = "walks/turns/is slow"
+"howtoplay_enemy2_desc" = "turns on a dime"
+"howtoplay_enemy3_desc" = "out for blood"
+
+"howtoplay_enemy1_pts" = "+100"
+"howtoplay_enemy2_pts" = "+300"
+"howtoplay_enemy3_pts" = "+500"
+
+"howtoplay_digups_pts_1" = "+100    +300    +500    +1 life"
+"howtoplay_digups_pts_2" = "-100       -250       -1 life"
+
+"howtoplay_igetitnow" = "Okay, I think I\'ve got it now."
+
+
+
+"level" = "Level "
+"ready" = "READY!"
+"endgame" = "end game"
+
+
+
+"gameover" = "Game Over!"
+"gameover_1_1" = "I died at level "
+"gameover_1_2" = ","
+"gameover_2_1" = "and scored "
+"gameover_2_2" = " pts."
+
+"newhigh" = "That\'s a new high score!"
+"goodjob" = "Good job!"
+
+"currentbest_1" = "My current best"
+"currentbest_2" = "is "
+
+"letsplayagain" = "Let\'s play another round, why not?"
+"gobacktotitle" = "I think I\'ll head back to the title menu."
+
+
+
+"optionsmusic_true" = "The music\'s currently on."
+"optionsmusic_false" = "The music\'s currently off."
+"optionssfx_true" = "The SFX are currently on."
+"optionssfx_false" = "The SFX are currently off."
+"optionsreset_1" = "I\'d like to reset my local scores."
+"optionsreset_2" = "Oh, I have to press again to confirm."
+"optionsreset_3" = "One more time, to reset local scores?"
+"optionsreset_4" = "Oh, there we go! Local scores reset."
+
+"optionsdone" = "I\'m done changing stuff."
+
+
+
+"creditsme" = "This game was made by Rae; she did art and programming."
+"creditsmusic_true" = "Rae also did the music, which you\'re hearing now."
+"creditsmusic_false" = "Rae also did the music, which you\'re not hearing."
+"creditssfx_true" = "Pixabay handled the SFX, which you\'re hearing now."
+"creditssfx_false" = "Pixabay handled the SFX, which you\'re not hearing."
+"creditsfont" = "Panic provided the nice Newsleak Serif font in the SDK."
+"creditstanuk" = "Toad and Schyzo made the Tanuk button input library."
+"creditsthanks" = "Mag, Toad, Kirk, Henry, John n\' bumble were big helps, too."
+"creditswandering" = "...Sorry, my mind\'s wandering."
+
+"creditsleave" = "Thanks, everybody!"
+
+
+
+"highscoresfetch" = "Fetching high scores..."
+"highscoresfail" = "Sorry, couldn't find the scores."
+"highscoresempty" = "This scoreboard is empty."
+"highscores_bona" = "Here lie the high scores for Bona Fido:"
+"highscores_ribbit" = "Here lie the high scores for Rib-bit:"
+"refresh" = "Refresh"
+
+"highscoresleave" = "Great scores, folks!"
+"highscoresleave_fail" = "Guess I\'ll try again later."
