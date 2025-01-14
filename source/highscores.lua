@@ -113,16 +113,20 @@ function highscores:refresh()
 	vars.load_timer = pd.timer.new(500, 1, 6.99)
 	vars.load_timer.repeats = true
 	gfx.sprite.redrawBackground()
-	if pd.isSimulator == 1 then
 		pd.scoreboards.getScoreboards(function(status, result)
-			printTable(status)
-			printTable(result)
+			if pd.isSimulator == 1 then
+				print('All available boards:')
+				printTable(status)
+				printTable(result)
+				print('--------------')
+			end
 		end)
-	end
 	pd.scoreboards.getScores(ribbit and "ribbit" or "bona", function(status, result)
 		if pd.isSimulator == 1 then
+			print('Current board results:')
 			printTable(status)
 			printTable(result)
+			print('--------------')
 		end
 		if status.code == "OK" then
 			vars.result = result

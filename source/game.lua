@@ -371,7 +371,7 @@ function game:init(...)
 
 		local crank = pd.getCrankChange()
 		if #playdate.inputHandlers > 1 and self.control then
-			if crank == 0 then
+			if crank < 2 and crank > -2 then
 				if save.sfx then assets.digging:stop() end
 				self.digging = false
 			else

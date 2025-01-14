@@ -98,7 +98,7 @@ function gameover:init(...)
 	if ribbit then
 		if vars.score > save.ribbit_score then
 			vars.newbest = true
-			save.score = vars.ribbit_score
+			save.ribbit_score = vars.ribbit_score
 		end
 		pd.scoreboards.addScore('ribbit', vars.score)
 	else
@@ -106,7 +106,14 @@ function gameover:init(...)
 			vars.newbest = true
 			save.score = vars.score
 		end
-		pd.scoreboards.addScore('bona', vars.score)
+		pd.scoreboards.addScore('bona', vars.score, function(status, result)
+			if pd.isSimulator == 1 then
+				print('Current game postage:')
+				printTable(status)
+				printTable(result)
+				print('--------------')
+			end
+		end)
 	end
 
 	gfx.sprite.setBackgroundDrawingCallback(function(width, height, x, y)
