@@ -1,8 +1,6 @@
 (source/fonts) Newsleak and Newsleak Bold fonts licensed by Panic, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 
-(key art, source/images) Art and the rest of the graphical assets made by rae, under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-
-(source/audio/music) Music made by Kevin MacLeod, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
+(key art, source/images, source/audio/music) Art/graphical assets and music made by rae, under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 (source/audio/sfx) SFX sourced from Pixabay, under [their license](https://pixabay.com/service/terms/)
 
