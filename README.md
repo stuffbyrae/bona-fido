@@ -1,5 +1,5 @@
 # Bona Fido
-My submission into PlayJam 6! Currently in jammy state, but hopefully in Catalog soon. Can't guarantee any good-practice code in here, but feel free to poke around and take what you want!
+My submission into PlayJam 6 — now in Catalog! Can't guarantee any good-practice code in here, but feel free to poke around and take what you want!
 
 A full list of credits and dependencies can be found [here](https://rae.wtf/blog/bona-fido-manual#credits).
 
