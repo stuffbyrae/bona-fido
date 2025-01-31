@@ -14,9 +14,9 @@
 
 
 "howtoplay1" = "Okay, let me run through this in my head one more time:\nMy name\'s Fido. I\'m a dog, but really I\'m nothing but a bag\nof bones. The afterlife\'s pretty nice; it\'s a bit repetitive, but\nI can get used to it. It\'s pretty chill! ...Well, aside from all the\nunmentionable horrors that are out to kill me again.\n\nMaybe if I keep running around, I can find a way outta\nthis place? Or at least set some new high scores."
-"howtoplay2" = "Let\'s take a more abstract approach to this:\nThe d-pad runs around. A button jumps, B button barks.\nThe Crank helps me dig up opportune stuff in the ground.\n\nRun around and dodge the enemies; bark to kill \'em and\nmove up to a harder (but higher-scoring) level.\n\nI\'ve got three "lives" (hah) - if I run out, it\'s game over."
-"howtoplay3" = "So, enemies, obviously,\nare bad. If I run into them\nthey\'ll kill me (...again), as\nquick as can be. Luckily,\nmy bark seems to shut \'em\nup and make \'em go away.\nThe B button will make me\nbark, in a pinch..."
-"howtoplay4" = "Those are Dig-ups. Some are\ngood, some are bad, but I\ndon\'t know what\'s what until\nI go fish it out. If there\'s\nsomething buried in the\nground, use the Crank to dig\nit up before it disappears.\nTrick or treat!"
+"howtoplay2" = "Let\'s take a more abstract approach to this:\nThe d-pad runs around. A button jumps, B button barks.\nThe crank helps me dig up opportune stuff in the ground.\n\nRun around and dodge the enemies; bark to kill \'em and\nmove up to a harder (but higher-scoring) level.\n\nI\'ve got three \"lives\" (hah) to start. if I run out, it\'s game over."
+"howtoplay3" = "So, enemies, obviously,\nare bad. If I run into them\nthey\'ll kill me (...again), as\nquick as can be. Luckily,\nmy bark seems to shut \'em\nup and make \'em go away.\nThe B button will make me\nbark, if I still have my voice."
+"howtoplay4" = "Those are Dig-ups. Some are\ngood, some are bad, but I\ndon\'t know what\'s what until\nI go fish it out. If there\'s\nsomething buried in the\nground, walk up to it and\nuse the crank to dig it up.\nTrick or treat!"
 
 "howtoplay_ask1" = "...I still don\'t understand."
 "howtoplay_ask2" = "Wicked! What about those enemies?"
@@ -35,8 +35,8 @@
 "howtoplay_enemy2_pts" = "+300"
 "howtoplay_enemy3_pts" = "+500"
 
-"howtoplay_digups_pts_1" = "+100    +300    +500    +1 life"
-"howtoplay_digups_pts_2" = "-100       -250       -1 life"
+"howtoplay_digups_pts_1" = " +100    +300    +500   +3 barks"
+"howtoplay_digups_pts_2" = "-250      -500"
 
 "howtoplay_igetitnow" = "Okay, I think I\'ve got it now."
 
@@ -45,6 +45,7 @@
 "level" = "Level "
 "ready" = "READY!"
 "endgame" = "end game"
+"barks" = "ⒷⒸ "
 
 
 
