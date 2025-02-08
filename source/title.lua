@@ -63,13 +63,13 @@ function title:init(...)
 		local sprCode = Tanuk_CodeSequence({pd.kButtonRight, pd.kButtonUp, pd.kButtonB, pd.kButtonDown, pd.kButtonUp, pd.kButtonB, pd.kButtonDown, pd.kButtonUp, pd.kButtonB}, function()
 			if save.sfx then
 				assets.win:play()
-				save.ribbitfound = true
-				ribbit = true
-				gfx.sprite.redrawBackground()
 				pd.timer.performAfterDelay(1000, function()
 					assets.croak:play()
 				end)
 			end
+			save.ribbitfound = true
+			ribbit = true
+			gfx.sprite.redrawBackground()
 		end)
 	end
 
