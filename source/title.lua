@@ -69,6 +69,7 @@ function title:init(...)
 			end
 			save.ribbitfound = true
 			ribbit = true
+			updatecheevos()
 			gfx.sprite.redrawBackground()
 		end)
 	end

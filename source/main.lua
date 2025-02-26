@@ -8,7 +8,9 @@ import 'CoreLibs/object'
 import 'CoreLibs/sprites'
 import 'CoreLibs/graphics'
 import 'CoreLibs/animation'
+import 'achievements'
 import 'scenemanager'
+import 'cheevos'
 import 'title'
 scenemanager = scenemanager()
 
@@ -35,6 +37,21 @@ end
 
 -- ... now we run that!
 savecheck()
+
+achievements.initialize(achievementData, false)
+
+function updatecheevos()
+	achievements.advanceTo("bona1000", save.score)
+	achievements.advanceTo("bona2500", save.score)
+	achievements.advanceTo("bona5000", save.score)
+	achievements.advanceTo("bona10000", save.score)
+	if save.ribbitfound then achievements.grant("ribbit") end
+	achievements.advanceTo("ribbit1000", save.ribbit_score)
+	achievements.advanceTo("ribbit2500", save.ribbit_score)
+	achievements.advanceTo("ribbit5000", save.ribbit_score)
+	achievements.advanceTo("ribbit10000", save.ribbit_score)
+	achievements.save()
+end
 
 -- When the game closes...
 function pd.gameWillTerminate()

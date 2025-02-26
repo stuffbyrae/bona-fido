@@ -146,6 +146,7 @@ function gameover:init(...)
 	self:add()
 
 	newmusic('audio/music/gameover')
+	updatecheevos()
 end
 
 function gameover:update()
